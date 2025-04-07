@@ -14,6 +14,8 @@ Search AWS Glacier bucket files based on user's inputs
 
 Example command:
 python searchGlacier.py -f HABCDED-3-IDUD001234 -b hgsc-dev
+python searchGlacier.py -b hgsc-alzheimers -m BCM_ABCD_EDGFI_SIC1234_1.cram.crai
+python searchGlacier.py -b hgsccl-czi -m "SIC1234.*fastq_list"
 """
 
 logger = logging.getLogger(__name__)
@@ -25,7 +27,7 @@ def track_api_call():
     """Increment API call counter and log the call."""
     global api_call_count
     api_call_count += 1
-    #logger.info(f"AWS API Call #{api_call_count}")
+    logger.info(f"AWS API Call #{api_call_count}")
 
 def parse_args():
     """ CLI interface to intake inputs
