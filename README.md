@@ -3,16 +3,16 @@ This repository contains a script for searching files stored in AWS (Amazon Web 
 
 ## How to use the script:
 
-## python searchGlacier.py -b <BUCKET_NAME> -m <STRING>
+### python searchGlacier.py -b <BUCKET_NAME> -m <STRING>
 
-Optional Parameters
-    > -f, --flowcell-lane-barcode     (Optional) Search flowcell-lane-barcode, e.g. HABCDEFG-3-IDU000000 <br>
-    > -b, --bucket                    (Optional) Name of the AWS S3 bucket <br>
-    > -p, --platform                  (Optional) Name of platform (e.g. Illumina) <br>
-    > -t, --technology                (Optional) Name of technology type (e.g. wholegenome) <br>
-    > -s, --storageClass              (Optional) Expected storage class of the files <br>
-    > -m, --match-substring           (Optional) Part of the path name or file name <br>
-    > -c, --csv                       (Optional) Full path of the output csv
+Optional Parameters <br>
+    -f, --flowcell-lane-barcode     (Optional) Search flowcell-lane-barcode, e.g. HABCDEFG-3-IDU000000 <br>
+    -b, --bucket                    (Optional) Name of the AWS S3 bucket <br>
+    -p, --platform                  (Optional) Name of platform (e.g. Illumina) <br>
+    -t, --technology                (Optional) Name of technology type (e.g. wholegenome) <br>
+    -s, --storageClass              (Optional) Expected storage class of the files <br>
+    -m, --match-substring           (Optional) Part of the path name or file name <br>
+    -c, --csv                       (Optional) Full path of the output csv
 
 Example command:
 1. python searchGlacier.py -f HABCDED-3-IDUD001234 -b hgsc-dev
@@ -21,7 +21,7 @@ Example command:
 
 Expected output 1:
 
-Matching files found:
+Matching files found: <br>
 {'Key': 'Illumina/wholegenome/sample1.fastq.gz', 'Size': 12345678} <br>
 {'Key': 'Illumina/wholegenome/sample2.fastq.gz', 'Size': 98765432} <br>
 
