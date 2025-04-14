@@ -27,7 +27,7 @@ def track_api_call():
     """Increment API call counter and log the call."""
     global api_call_count
     api_call_count += 1
-    logger.info(f"AWS API Call #{api_call_count}")
+    #logger.info(f"AWS API Call #{api_call_count}")
 
 def parse_args():
     """ CLI interface to intake inputs
