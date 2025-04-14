@@ -1,9 +1,11 @@
 This repository contains a script for searching files stored in AWS (Amazon Web Services) S3 buckets. It works with all AWS storage classes, including Glacier, Standard, and more.
 
 
-## How to use the script:
+## How to use the script
 
-### python searchGlacier.py -b A_BUCKET_NAME> -m SOME_FILE_PATH_NAME
+### Example command
+
+python searchGlacier.py Optional_Parameters
 
 Optional Parameters <br>
     -f, --flowcell-lane-barcode     (Optional) Search flowcell-lane-barcode, e.g. HABCDEFG-3-IDU000000 <br>
@@ -14,10 +16,12 @@ Optional Parameters <br>
     -m, --match-substring           (Optional) Part of the path name or file name <br>
     -c, --csv                       (Optional) Full path of the output csv
 
-Example command:
+For example:
 1. python searchGlacier.py -f HABCDED-3-IDUD001234 -b hgsc-dev
 2. python searchGlacier.py -b hgsc-alzheimers -m BCM_ABCD_EDGFI_SIC1234_1.cram.crai
 3. python searchGlacier.py -b hgsccl-czi -m "SIC1234.*fastq_list"
+
+### Example output
 
 Expected output 1:
 
