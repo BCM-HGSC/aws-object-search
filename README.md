@@ -5,7 +5,7 @@ This repository contains a script for searching files stored in AWS (Amazon Web 
 
 ### Example command
 
-'python searchGlacier.py Optional_Parameters'
+`python searchGlacier.py Optional_Parameters`
 
 Optional_Parameters <br>
     -f, --flowcell-lane-barcode     (Optional) Search flowcell-lane-barcode, e.g. HABCDEFG-3-IDU000000 <br>
@@ -17,27 +17,27 @@ Optional_Parameters <br>
     -c, --csv                       (Optional) Full path of the output csv
 
 For example:
-1. 'python searchGlacier.py -f HABCDED-3-IDUD001234 -b hgsc-dev'
-2. 'python searchGlacier.py -b hgsc-alzheimers -m BCM_ABCD_EDGFI_SIC1234_1.cram.crai'
-3. 'python searchGlacier.py -b hgsccl-czi -m "SIC1234.*fastq_list"'
+1. `python searchGlacier.py -f HABCDED-3-IDUD001234 -b hgsc-dev`
+2. `python searchGlacier.py -b hgsc-alzheimers -m BCM_ABCD_EDGFI_SIC1234_1.cram.crai`
+3. `python searchGlacier.py -b hgsccl-czi -m "SIC1234.*fastq_list"`
 
 ### Example output
 
 Expected output 1:
 
-'''
+```
 Matching files found: <br>
 {'Key': 'Illumina/wholegenome/sample1.fastq.gz', 'Size': 12345678} <br>
 {'Key': 'Illumina/wholegenome/sample2.fastq.gz', 'Size': 98765432} <br>
 
 2 files total found in my-bucket
-'''
+```
 
 Expecte output 2:
 
-'''
+```
 No matching files found.
-'''
+```
 
 ## If the script does not show the expected outcome:
 1. Check if the AWS credential is correctly activated/refreshed
