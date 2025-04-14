@@ -3,7 +3,7 @@ This repository contains a script for searching files stored in AWS (Amazon Web 
 
 ## How to use the script:
 
-### python searchGlacier.py -b <BUCKET_NAME> -m <STRING>
+### python searchGlacier.py -b A_BUCKET_NAME> -m SOME_FILE_PATH_NAME
 
 Optional Parameters <br>
     -f, --flowcell-lane-barcode     (Optional) Search flowcell-lane-barcode, e.g. HABCDEFG-3-IDU000000 <br>
@@ -32,5 +32,5 @@ Expecte output 2:
 No matching files found.
 
 ## If the script does not show the expected outcome:
-1. Check if the AWS credential is correctly activated
+1. Check if the AWS credential is correctly activated/refreshed
 2. Check if input the correct parameters
