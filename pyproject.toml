@@ -1,0 +1,43 @@
+[project]
+name = "aws-object-search"
+description = "Tools for searching the contents of S3 buckets"
+dynamic = ["version"]
+authors = [
+    { name = "Mingxuan Guan", email = "mingxuan.guan@bcm.edu" },
+    { name = "Walker Hale", email = "hale@bcm.edu" },
+]
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+    "boto3"
+]
+[project.optional-dependencies]
+dev = ["pytest>=8.2", "pre-commit>=3.7",]
+[project.scripts]
+aos-scan = "aws_object_search.entry:aos_scan"
+[project.urls]
+Homepage = "https://github.com/BCM-HGSC/aws-object-search"
+Issues = "https://github.com/BCM-HGSC/aws-object-search/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = { attr = "aws_object_search.__init__.__version__" }
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
