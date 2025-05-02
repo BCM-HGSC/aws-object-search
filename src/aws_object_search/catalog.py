@@ -85,16 +85,15 @@ class S3ObjectCatalog:
     Stores a catalog of S3 objects in TSV files in a common directory.
     """
 
-    def __init__(self, catalog_root: str | Path | None = None):
+    def __init__(self, catalog_root: str | Path):
         """
         Initialize the S3ObjectCatalog with an optional parent directory.
         :param catalog_root: Parent directory for output files
         """
-        self.catalog_root = (
-            Path(catalog_root).resolve()
-            if catalog_root
-            else Path("bucket-scans").resolve()
-        )
+        assert isinstance(catalog_root, (str, Path)), catalog_root
+        if not catalog_root:
+            raise ValueError("catalog_root connot be empty string")
+        self.catalog_root = Path(catalog_root).resolve()
 
     def iter_dicts(self) -> Iterable[dict[str, str]]:
         "Iterate all current contents flattened to dict and str"
