@@ -45,10 +45,8 @@ class S3ObjectWriter:
         :param s3_objects: Iterable of S3 objects
         :param bucket_name: Name of the S3 bucket
         """
-        if not isinstance(s3_objects, Iterable):
-            raise TypeError("S3 objects must be an iterable")
-        if not isinstance(bucket_name, str):
-            raise TypeError("Bucket name must be a string")
+        assert isinstance(s3_objects, Iterable)
+        assert isinstance(bucket_name, str)
         tsv_file_path = self.new_tsv_file_path(bucket_name)
         self.ensure_parent_directory(tsv_file_path)
         with open(tsv_file_path, "w", newline="", encoding="utf-8") as tsv_file:
@@ -63,10 +61,8 @@ class S3ObjectWriter:
         :param bucket_name: Name of the S3 bucket
         :return: Path to the new TSV file
         """
-        if not isinstance(bucket_name, str):
-            raise TypeError("Bucket name must be a string")
-        if not bucket_name:
-            raise ValueError("Bucket name is required")
+        assert isinstance(bucket_name, str)
+        assert bucket_name
         return (
             self.parent_dir
             / f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{bucket_name}.tsv"
@@ -77,10 +73,8 @@ class S3ObjectWriter:
         Ensure the parent directory of the TSV file exists.
         :param tsv_file_path: Path to the TSV file
         """
-        if not isinstance(tsv_file_path, (str, Path)):
-            raise TypeError("TSV file path must be a string or Path")
-        if not tsv_file_path:
-            raise ValueError("TSV file path is required")
+        assert isinstance(tsv_file_path, (str, Path))
+        assert tsv_file_path
         parent_dir = Path(tsv_file_path).parent.resolve()
         if not parent_dir.exists():
             parent_dir.mkdir(parents=True, exist_ok=True)
