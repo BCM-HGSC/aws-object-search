@@ -37,17 +37,18 @@ class S3ObjectWriter:
         )
 
     def output_s3_objects_to_tsv(
-        self, s3_objects: Iterable[dict], bucket_name: str
+        self, s3_objects: Iterable[dict], bucket_name: str, prefix: str | None = None
     ) -> None:
         """
         Output S3 objects to a TSV file.
         Create the parent directory if it doesn't exist.
         :param s3_objects: Iterable of S3 objects
         :param bucket_name: Name of the S3 bucket
+        :param prefix: optional value to use instead of timestamp in output file names
         """
         assert isinstance(s3_objects, Iterable)
         assert isinstance(bucket_name, str)
-        tsv_file_path = self.new_tsv_file_path(bucket_name)
+        tsv_file_path = self.new_tsv_file_path(bucket_name, prefix)
         self.ensure_parent_directory(tsv_file_path)
         with open(tsv_file_path, "w", newline="", encoding="utf-8") as tsv_file:
             writer = csv.DictWriter(tsv_file, fieldnames=TSV_FIELDS, delimiter="\t")
@@ -55,18 +56,18 @@ class S3ObjectWriter:
             for obj in s3_objects:
                 writer.writerow({OBJ_KEY_MAP[k]: flatten(v) for k, v in obj.items()})
 
-    def new_tsv_file_path(self, bucket_name: str) -> Path:
+    def new_tsv_file_path(self, bucket_name: str, prefix: str | None = None) -> Path:
         """
         Generate a new TSV file path based on the bucket name and current timestamp.
         :param bucket_name: Name of the S3 bucket
+        :param prefix: optional value to use instead of timestamp in output file names
         :return: Path to the new TSV file
         """
         assert isinstance(bucket_name, str)
         assert bucket_name
-        return (
-            self.parent_dir
-            / f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{bucket_name}.tsv"
-        )
+        if not prefix:
+            prefix = datetime.now().strftime("%Y%m%d-%H%M%S")
+        return self.parent_dir / f"{prefix}-{bucket_name}.tsv"
 
     def ensure_parent_directory(self, tsv_file_path):
         """

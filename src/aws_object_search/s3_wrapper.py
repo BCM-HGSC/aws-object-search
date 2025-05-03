@@ -14,12 +14,14 @@ def run_s3_object_scan(
     bucket_prefix: str | None = None,
     parent_dir: str | Path | None = None,
     s3_client=None,
+    prefix: str | None = None,
 ) -> None:
     """
     Run a scan of S3 buckets and output their objects to TSV files.
     :param bucket_prefix: Optional prefix to filter bucket names
     :param s3_client: Boto3 S3 client
     :param parent_dir: Parent directory for output files
+    :param prefix: optional value to use instead of timestamp in output file names
     """
     if not isinstance(bucket_prefix, (str, type(None))):
         raise TypeError("Bucket prefix must be a string or None")
@@ -33,7 +35,7 @@ def run_s3_object_scan(
     for bucket in buckets:
         logger.info(f"Scanning bucket: {bucket}")
         s3_objects = scanner.get_bucket_objects(bucket)
-        writer.output_s3_objects_to_tsv(s3_objects, bucket)
+        writer.output_s3_objects_to_tsv(s3_objects, bucket, prefix)
     logger.info("Scan completed successfully.")
 
 
