@@ -41,3 +41,7 @@ version = { attr = "aws_object_search.__init__.__version__" }
 filterwarnings = [
     "ignore::DeprecationWarning",
 ]
+markers = [
+    "integration: mark a test as an integration test",
+]
+addopts = "--strict-markers"
