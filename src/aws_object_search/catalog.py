@@ -22,14 +22,14 @@ OBJ_KEY_MAP = {
 TSV_FIELDS = [OBJ_KEY_MAP[k] for k in OBJ_KEY_MAP]
 
 
-class S3ObjectWriter:
+class S3ObjectCatalog:
     """
-    Class to handle writing S3 objects to TSV files.
+    Stores a catalog of S3 objects in TSV files.
     """
 
     def __init__(self, parent_dir: str | Path | None = None):
         """
-        Initialize the S3ObjectWriter with an optional parent directory.
+        Initialize the S3ObjectCatalog with an optional parent directory.
         :param parent_dir: Parent directory for output files
         """
         self.parent_dir = (
