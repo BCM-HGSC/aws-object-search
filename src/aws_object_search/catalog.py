@@ -3,8 +3,10 @@ Local catalog of the contents of cloud objects (S3/glacier).
 """
 
 import csv
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from logging import getLogger
+from operator import attrgetter
 from pathlib import Path
 from typing import Iterable
 
@@ -22,6 +24,57 @@ OBJ_KEY_MAP = {
 TSV_FIELDS = [OBJ_KEY_MAP[k] for k in OBJ_KEY_MAP]
 
 
+@dataclass(frozen=True, order=True)
+class ObjectMetadata:
+    "Metadata for an object where all values are str. See flatten()."
+
+    key: str
+    last_modified: str
+    size: str
+    storage_class: str
+    e_tag: str
+    checksum_algorithm: str
+    checksum_type: str
+
+    def flattened_dict(self) -> dict[str, str]:
+        "Fatten to str-based dict"
+        return asdict(self)
+
+
+@dataclass(frozen=True, order=True)
+class BucketScan:
+    """
+    Wraps a TSV file that contains the results from scanning a particular bucket at
+    a particular time
+    """
+
+    file_path: Path
+
+    @property
+    def bucket_name(self) -> str:
+        "Return name of the bucket, parsed from file_path."
+        return self.file_path.stem.split("-", 2)[2]
+
+    @property
+    def scan_start(self) -> datetime:
+        "Return datetime for scan start, parsed from file_path."
+        assert self.file_path.name[15] == "-"
+        return datetime.strptime(self.file_path.name[:15], "%Y%m%d-%H%M%S")
+
+    def contents(self) -> Iterable[ObjectMetadata]:
+        "Iterate the underlying file's contents."
+        with open(self.file_path, "rt", newline="", encoding="utf-8") as tsv_file:
+            reader = csv.DictReader(tsv_file, delimiter="\t")
+            for row in reader:
+                yield ObjectMetadata(**row)
+
+    def flattened_dict(self) -> dict[str, str]:
+        "Fatten to str-based dict"
+        return dict(
+            scan_start=self.scan_start.isoformat(), bucket_name=self.bucket_name
+        )
+
+
 class S3ObjectCatalog:
     """
     Stores a catalog of S3 objects in TSV files in a common directory.
@@ -35,6 +88,37 @@ class S3ObjectCatalog:
         self.parent_dir = (
             Path(parent_dir).resolve() if parent_dir else Path("bucket-scans").resolve()
         )
+
+    def iter_dicts(self) -> Iterable[dict[str, str]]:
+        "Iterate all current contents flattened to dict and str"
+        for bucket_scan, object_metadata in self.current_contents():
+            yield bucket_scan.flattened_dict() | object_metadata.flattened_dict()
+
+    def current_contents(self) -> Iterable[tuple[BucketScan, ObjectMetadata]]:
+        "Yield everything current"
+        for bucket_scan in self.current_bucket_scans():
+            for object_metadata in bucket_scan.contents():
+                yield (bucket_scan, object_metadata)
+
+    def current_bucket_scans(self) -> list[BucketScan]:
+        """
+        Return list sorted by scan_start of only the most recent scan for each bucket.
+        """
+        most_recent_scans: dict[str, BucketScan] = {}
+        for b in self.all_bucket_scans():
+            if (
+                b.bucket_name not in most_recent_scans
+                or b.scan_start > most_recent_scans[b.bucket_name].scan_start
+            ):
+                most_recent_scans[b.bucket_name] = b
+        return sorted(
+            most_recent_scans.values(), key=attrgetter("scan_start", "bucket_name")
+        )
+
+    def all_bucket_scans(self) -> Iterable[BucketScan]:
+        """Yield all scans in catalog."""
+        for file_path in self.parent_dir.glob("????????-??????-*.tsv"):
+            yield BucketScan(file_path)
 
     def output_s3_objects_to_tsv(
         self, s3_objects: Iterable[dict], bucket_name: str, prefix: str | None = None
