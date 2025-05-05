@@ -24,7 +24,7 @@ TSV_FIELDS = [OBJ_KEY_MAP[k] for k in OBJ_KEY_MAP]
 
 class S3ObjectCatalog:
     """
-    Stores a catalog of S3 objects in TSV files.
+    Stores a catalog of S3 objects in TSV files in a common directory.
     """
 
     def __init__(self, parent_dir: str | Path | None = None):
