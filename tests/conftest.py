@@ -3,6 +3,8 @@ This file is used to configure pytest and add custom options or markers.
 It allows for the inclusion of integration tests based on command-line options.
 """
 
+from pathlib import Path
+
 import pytest
 
 
@@ -25,3 +27,15 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         if "integration" in item.keywords:
             item.add_marker(skip_integration)
+
+
+@pytest.fixture
+def resources_dir() -> Path:
+    "Pytest fixture providing directory of test resources"
+    return Path(__file__).parent / "resources"
+
+
+@pytest.fixture
+def simple_catalog_path(resources_dir) -> Path:
+    "Directory containing a simple catalog in TSV"
+    return resources_dir / "simple_catalog"

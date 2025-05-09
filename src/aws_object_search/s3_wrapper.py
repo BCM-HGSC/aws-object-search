@@ -4,7 +4,7 @@ from typing import Generator
 
 import boto3
 
-from .catalog import S3ObjectWriter
+from .catalog import S3ObjectCatalog
 
 
 logger = getLogger(__name__)
@@ -29,7 +29,7 @@ def run_s3_object_scan(
         raise TypeError("Parent directory must be a string or Path or None")
 
     scanner = BucketScanner(s3_client)
-    writer = S3ObjectWriter(parent_dir)
+    writer = S3ObjectCatalog(parent_dir)
 
     buckets = scanner.list_buckets_with_prefix(bucket_prefix)
     for bucket in buckets:
