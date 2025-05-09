@@ -8,7 +8,7 @@ from datetime import datetime
 from logging import getLogger
 from operator import attrgetter
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable
 
 
 logger = getLogger(__name__)
@@ -121,7 +121,10 @@ class S3ObjectCatalog:
             yield BucketScan(file_path)
 
     def output_s3_objects_to_tsv(
-        self, s3_objects: Iterable[dict], bucket_name: str, prefix: str | None = None
+        self,
+        s3_objects: Iterable[dict[str, Any]],
+        bucket_name: str,
+        prefix: str | None = None,
     ) -> None:
         """
         Output S3 objects to a TSV file.
@@ -138,7 +141,11 @@ class S3ObjectCatalog:
             writer = csv.DictWriter(tsv_file, fieldnames=TSV_FIELDS, delimiter="\t")
             writer.writeheader()
             for obj in s3_objects:
-                writer.writerow({OBJ_KEY_MAP[k]: flatten(v) for k, v in obj.items()})
+                writer.writerow(
+                    # By using the get method with default,
+                    # handle cases with AWS names or Python names
+                    {OBJ_KEY_MAP.get(k, k): flatten(v) for k, v in obj.items()}
+                )
 
     def new_tsv_file_path(self, bucket_name: str, prefix: str | None = None) -> Path:
         """
