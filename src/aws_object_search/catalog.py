@@ -3,6 +3,8 @@ Local catalog of the contents of cloud objects (S3/glacier).
 """
 
 import csv
+import gzip
+
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from logging import getLogger
@@ -45,7 +47,8 @@ class ObjectMetadata:
 class BucketScan:
     """
     Wraps a TSV file that contains the results from scanning a particular bucket at
-    a particular time
+    a particular time. The TSV file may be gzipped. If so, file_path must have the ".gz"
+    suffix.
     """
 
     file_path: Path
@@ -53,7 +56,8 @@ class BucketScan:
     @property
     def bucket_name(self) -> str:
         "Return name of the bucket, parsed from file_path."
-        return self.file_path.stem.split("-", 2)[2]
+        # Can't use stem, because it only removes the last suffix.
+        return self.file_path.stem.split(".", 1)[0].split("-", 2)[2]
 
     @property
     def scan_start(self) -> datetime:
@@ -63,7 +67,8 @@ class BucketScan:
 
     def contents(self) -> Iterable[ObjectMetadata]:
         "Iterate the underlying file's contents."
-        with open(self.file_path, "rt", newline="", encoding="utf-8") as tsv_file:
+        o = gzip.open if self.file_path.suffix == ".gz" else open
+        with o(self.file_path, "rt", newline="", encoding="utf-8") as tsv_file:
             reader = csv.DictReader(tsv_file, delimiter="\t")
             for row in reader:
                 yield ObjectMetadata(**row)
@@ -116,9 +121,13 @@ class S3ObjectCatalog:
         )
 
     def all_bucket_scans(self) -> Iterable[BucketScan]:
-        """Yield all scans in catalog."""
-        for file_path in self.parent_dir.glob("????????-??????-*.tsv"):
-            yield BucketScan(file_path)
+        """Yield all scans in catalog, .tsv files before .tsv.gz files."""
+        # for file_path in self.parent_dir.glob("????????-??????-*.tsv"):
+        #     yield BucketScan(file_path)
+        patterns = ["????????-??????-*.tsv", "????????-??????-*.tsv.gz"]
+        for pattern in patterns:
+            for file_path in self.parent_dir.glob(pattern):
+                yield BucketScan(file_path)
 
     def output_s3_objects_to_tsv(
         self,
@@ -135,9 +144,9 @@ class S3ObjectCatalog:
         """
         assert isinstance(s3_objects, Iterable)
         assert isinstance(bucket_name, str)
-        tsv_file_path = self.new_tsv_file_path(bucket_name, prefix)
+        tsv_file_path = self.new_tsv_gz_file_path(bucket_name, prefix)
         self.ensure_parent_directory(tsv_file_path)
-        with open(tsv_file_path, "w", newline="", encoding="utf-8") as tsv_file:
+        with gzip.open(tsv_file_path, "wt", newline="", encoding="utf-8") as tsv_file:
             writer = csv.DictWriter(tsv_file, fieldnames=TSV_FIELDS, delimiter="\t")
             writer.writeheader()
             for obj in s3_objects:
@@ -147,9 +156,9 @@ class S3ObjectCatalog:
                     {OBJ_KEY_MAP.get(k, k): flatten(v) for k, v in obj.items()}
                 )
 
-    def new_tsv_file_path(self, bucket_name: str, prefix: str | None = None) -> Path:
+    def new_tsv_gz_file_path(self, bucket_name: str, prefix: str | None = None) -> Path:
         """
-        Generate a new TSV file path based on the bucket name and current timestamp.
+        Generate a new TSV.GZ file path based on the bucket name and current timestamp.
         :param bucket_name: Name of the S3 bucket
         :param prefix: optional value to use instead of timestamp in output file names
         :return: Path to the new TSV file
@@ -158,7 +167,7 @@ class S3ObjectCatalog:
         assert bucket_name
         if not prefix:
             prefix = datetime.now().strftime("%Y%m%d-%H%M%S")
-        return self.parent_dir / f"{prefix}-{bucket_name}.tsv"
+        return self.parent_dir / f"{prefix}-{bucket_name}.tsv.gz"
 
     def ensure_parent_directory(self, tsv_file_path):
         """

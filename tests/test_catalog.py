@@ -117,3 +117,61 @@ def test_iter_dicts(simple_catalog):
         checksum_type="FULL_OBJECT",
         key="v1/illumina/wex/fastqs/Sample_HY2L7DSX2-3-IDUDI0076/event.json",
     )
+
+
+@fixture
+def temp_gzipped_catalog(simple_catalog, tmp_path) -> S3ObjectCatalog:
+    "Read simple catalog and write to tmp_path in .tsv.gz format."
+    gz_catalog = S3ObjectCatalog(tmp_path / "gzipped_catalog")
+    for b in simple_catalog.all_bucket_scans():
+        date, time, bucket_name = b.file_path.stem.split("-", 2)
+        data = (m.flattened_dict() for m in b.contents())
+        gz_catalog.output_s3_objects_to_tsv(data, bucket_name, f"{date}-{time}")
+    return gz_catalog
+
+
+def test_gzipped_catalog(temp_gzipped_catalog) -> None:
+    "Consistency test comparing to uncompressed catalog"
+    print(temp_gzipped_catalog.parent_dir)
+    expected_bucket_scan_file_names = [
+        "20250503-164831-hgsc-a-1-2-3.tsv.gz",
+        "20250503-164832-hgsc-c-123.tsv.gz",
+        "20250504-164832-hgsc-a-1-2-3.tsv.gz",
+        "20250504-164833-hgsc-c-123.tsv.gz",
+        "20250504-164834-hgsc-d.tsv.gz",
+        "20250505-164832-hgsc-b123.tsv.gz",
+    ]
+    bucket_scan_file_names = sorted(
+        p.name for p in temp_gzipped_catalog.parent_dir.iterdir()
+    )
+    assert bucket_scan_file_names == expected_bucket_scan_file_names
+    all_bucket_scans = sorted(temp_gzipped_catalog.all_bucket_scans())
+    assert [
+        b.file_path.name for b in all_bucket_scans
+    ] == expected_bucket_scan_file_names
+    results = list(temp_gzipped_catalog.iter_dicts())
+    assert len(results) == 12
+    first, *_, last = results
+    assert first == dict(
+        scan_start="2025-05-04T16:48:32",
+        bucket_name="hgsc-a-1-2-3",
+        last_modified="2025-03-31T01:37:05+00:00",
+        size="6325709904",
+        storage_class="DEEP_ARCHIVE",
+        e_tag="a65f5b56909bf63398213ae450a879fb-604",
+        checksum_algorithm="SHA256",
+        checksum_type="COMPOSITE",
+        key="v1/illumina/wex/fastqs/Sample_HY2L7DSX2-3-IDUDI0074/"
+        "HY2L7DSX2-3-IDUDI0074_S120_L003_R1_001.fastq.gz",
+    )
+    assert last == dict(
+        scan_start="2025-05-05T16:48:32",
+        bucket_name="hgsc-b123",
+        last_modified="2025-03-31T01:39:09+00:00",
+        size="2271",
+        storage_class="DEEP_ARCHIVE",
+        e_tag="8762b27bbeee8c644b19ce7dac46c5c2",
+        checksum_algorithm="SHA256",
+        checksum_type="FULL_OBJECT",
+        key="v1/illumina/wex/fastqs/Sample_HY2L7DSX2-3-IDUDI0076/event.json",
+    )
