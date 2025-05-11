@@ -122,8 +122,6 @@ class S3ObjectCatalog:
 
     def all_bucket_scans(self) -> Iterable[BucketScan]:
         """Yield all scans in catalog, .tsv files before .tsv.gz files."""
-        # for file_path in self.parent_dir.glob("????????-??????-*.tsv"):
-        #     yield BucketScan(file_path)
         patterns = ["????????-??????-*.tsv", "????????-??????-*.tsv.gz"]
         for pattern in patterns:
             for file_path in self.parent_dir.glob(pattern):
