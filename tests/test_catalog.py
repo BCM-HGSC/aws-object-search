@@ -26,7 +26,7 @@ def test_list_catalog(simple_catalog):
     all_scans = sorted(catalog.all_bucket_scans())
     assert (
         all_scans[0].file_path
-        == catalog.parent_dir / "20250503-164831-hgsc-a-1-2-3.tsv"
+        == catalog.catalog_root / "20250503-164831-hgsc-a-1-2-3.tsv"
     )
     computed = [f"{s.scan_start} {s.bucket_name}.tsv" for s in all_scans]
     assert computed == expected
@@ -132,7 +132,7 @@ def temp_gzipped_catalog(simple_catalog, tmp_path) -> S3ObjectCatalog:
 
 def test_gzipped_catalog(temp_gzipped_catalog) -> None:
     "Consistency test comparing to uncompressed catalog"
-    print(temp_gzipped_catalog.parent_dir)
+    print(temp_gzipped_catalog.catalog_root)
     expected_bucket_scan_file_names = [
         "20250503-164831-hgsc-a-1-2-3.tsv.gz",
         "20250503-164832-hgsc-c-123.tsv.gz",
@@ -142,7 +142,7 @@ def test_gzipped_catalog(temp_gzipped_catalog) -> None:
         "20250505-164832-hgsc-b123.tsv.gz",
     ]
     bucket_scan_file_names = sorted(
-        p.name for p in temp_gzipped_catalog.parent_dir.iterdir()
+        p.name for p in temp_gzipped_catalog.catalog_root.iterdir()
     )
     assert bucket_scan_file_names == expected_bucket_scan_file_names
     all_bucket_scans = sorted(temp_gzipped_catalog.all_bucket_scans())
