@@ -18,7 +18,7 @@ def aos_scan(args: argparse.Namespace | None = None) -> None:
     Run a scan of S3 buckets and output their objects to TSV files.
     """
     if args is None:
-        args = parse_args()
+        args = parse_scan_args()
     config_logging(args.log_level)
     logger.info(f"Bucket prefix: {args.bucket_prefix}")
     logger.info(f"Parent directory: {args.parent_dir}")
@@ -31,7 +31,7 @@ def aos_scan(args: argparse.Namespace | None = None) -> None:
     logger.info("Scan completed successfully.")
 
 
-def parse_args() -> argparse.Namespace:
+def parse_scan_args() -> argparse.Namespace:
     """
     Parse command line arguments.
     """
