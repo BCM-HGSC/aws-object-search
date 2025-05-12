@@ -14,9 +14,7 @@ logger = getLogger(__name__)
 
 
 def aos_scan(args: argparse.Namespace | None = None) -> None:
-    """
-    Run a scan of S3 buckets and output their objects to TSV files.
-    """
+    "Run a scan of S3 buckets and output their objects to TSV files."
     if args is None:
         args = parse_scan_args()
     config_logging(args.log_level)
@@ -32,9 +30,7 @@ def aos_scan(args: argparse.Namespace | None = None) -> None:
 
 
 def parse_scan_args() -> argparse.Namespace:
-    """
-    Parse command line arguments.
-    """
+    "Parse command line arguments."
     parser = argparse.ArgumentParser(
         description="Scan AWS S3 buckets and output their objects to TSV files."
     )
