@@ -29,6 +29,8 @@ def config_logging(log_level: int | str | None) -> None:
         level = log_level
     else:
         raise TypeError("log_level must be int, str or None")
+    getLogger("botocore").setLevel(INFO)
     getLogger("botocore.credentials").setLevel(ERROR)
     getLogger("botocore.tokens").setLevel(ERROR)
+    getLogger("urllib3").setLevel(INFO)
     basicConfig(level=level, format=ROOT_FORMAT, handlers=[ROOT_HANDLER])
