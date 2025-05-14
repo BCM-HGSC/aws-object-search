@@ -11,22 +11,24 @@ logger = getLogger(__name__)
 
 
 def run_s3_object_scan(
+    parent_dir: str | Path,
     bucket_prefix: str | None = None,
-    parent_dir: str | Path | None = None,
+    tsv_file_prefix: str | None = None,
     s3_client=None,
-    prefix: str | None = None,
 ) -> None:
     """
     Run a scan of S3 buckets and output their objects to TSV files.
-    :param bucket_prefix: Optional prefix to filter bucket names
-    :param s3_client: Boto3 S3 client
     :param parent_dir: Parent directory for output files
-    :param prefix: optional value to use instead of timestamp in output file names
+    :param bucket_prefix: Optional prefix to filter bucket names
+    :param tsv_file_prefix: Optional value to use instead of timestamp in TSV file names
+    :param s3_client: Optional Boto3 S3 client
     """
+    if not isinstance(parent_dir, (str, Path)):
+        raise TypeError(
+            f"Parent directory {parent_dir!r} must be a string or Path or None"
+        )
     if not isinstance(bucket_prefix, (str, type(None))):
         raise TypeError("Bucket prefix must be a string or None")
-    if not isinstance(parent_dir, (str, Path, type(None))):
-        raise TypeError("Parent directory must be a string or Path or None")
 
     scanner = BucketScanner(s3_client)
     writer = S3ObjectCatalog(parent_dir)
@@ -35,7 +37,7 @@ def run_s3_object_scan(
     for bucket in buckets:
         logger.info(f"Scanning bucket: {bucket}")
         s3_objects = scanner.get_bucket_objects(bucket)
-        writer.output_s3_objects_to_tsv(s3_objects, bucket, prefix)
+        writer.output_s3_objects_to_tsv(s3_objects, bucket, tsv_file_prefix)
     logger.info("Scan completed successfully.")
 
 

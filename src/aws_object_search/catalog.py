@@ -85,14 +85,15 @@ class S3ObjectCatalog:
     Stores a catalog of S3 objects in TSV files in a common directory.
     """
 
-    def __init__(self, parent_dir: str | Path | None = None):
+    def __init__(self, catalog_root: str | Path):
         """
         Initialize the S3ObjectCatalog with an optional parent directory.
-        :param parent_dir: Parent directory for output files
+        :param catalog_root: Parent directory for output files
         """
-        self.parent_dir = (
-            Path(parent_dir).resolve() if parent_dir else Path("bucket-scans").resolve()
-        )
+        assert isinstance(catalog_root, (str, Path)), catalog_root
+        if not catalog_root:
+            raise ValueError("catalog_root connot be empty string")
+        self.catalog_root = Path(catalog_root).resolve()
 
     def iter_dicts(self) -> Iterable[dict[str, str]]:
         "Iterate all current contents flattened to dict and str"
@@ -122,11 +123,9 @@ class S3ObjectCatalog:
 
     def all_bucket_scans(self) -> Iterable[BucketScan]:
         """Yield all scans in catalog, .tsv files before .tsv.gz files."""
-        # for file_path in self.parent_dir.glob("????????-??????-*.tsv"):
-        #     yield BucketScan(file_path)
         patterns = ["????????-??????-*.tsv", "????????-??????-*.tsv.gz"]
         for pattern in patterns:
-            for file_path in self.parent_dir.glob(pattern):
+            for file_path in self.catalog_root.glob(pattern):
                 yield BucketScan(file_path)
 
     def output_s3_objects_to_tsv(
@@ -145,7 +144,7 @@ class S3ObjectCatalog:
         assert isinstance(s3_objects, Iterable)
         assert isinstance(bucket_name, str)
         tsv_file_path = self.new_tsv_gz_file_path(bucket_name, prefix)
-        self.ensure_parent_directory(tsv_file_path)
+        self.ensure_catalog_root(tsv_file_path)
         with gzip.open(tsv_file_path, "wt", newline="", encoding="utf-8") as tsv_file:
             writer = csv.DictWriter(tsv_file, fieldnames=TSV_FIELDS, delimiter="\t")
             writer.writeheader()
@@ -167,20 +166,20 @@ class S3ObjectCatalog:
         assert bucket_name
         if not prefix:
             prefix = datetime.now().strftime("%Y%m%d-%H%M%S")
-        return self.parent_dir / f"{prefix}-{bucket_name}.tsv.gz"
+        return self.catalog_root / f"{prefix}-{bucket_name}.tsv.gz"
 
-    def ensure_parent_directory(self, tsv_file_path):
+    def ensure_catalog_root(self, tsv_file_path):
         """
         Ensure the parent directory of the TSV file exists.
         :param tsv_file_path: Path to the TSV file
         """
         assert isinstance(tsv_file_path, (str, Path))
         assert tsv_file_path
-        parent_dir = Path(tsv_file_path).parent.resolve()
-        if not parent_dir.exists():
-            parent_dir.mkdir(parents=True, exist_ok=True)
-        if not parent_dir.is_dir():
-            raise ValueError(f"{parent_dir} must be a directory")
+        catalog_root = Path(tsv_file_path).parent.resolve()
+        if not catalog_root.exists():
+            catalog_root.mkdir(parents=True, exist_ok=True)
+        if not catalog_root.is_dir():
+            raise ValueError(f"{catalog_root} must be a directory")
 
 
 def flatten(value):
