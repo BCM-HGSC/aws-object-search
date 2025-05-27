@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Run a command in a sanitized environment.
+# Run "sanitize-command env" to see the sanitized environment.``
+
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd )"
+
+exec /usr/bin/env -i HOME="$ROOT" LOGNAME=$LOGNAME USER=$USER \
+    PATH=/usr/bin:/bin \
+    SHELL="$SHELL" \
+    TERM="$TERM" \
+    __SANITIZED_ENV=1 \
+    "$@"
