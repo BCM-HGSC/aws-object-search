@@ -19,9 +19,11 @@
 set -euo pipefail
 # set -x
 
+PYTHON_VERSION=3.13
+
 main() {
     THIS_SCRIPT="${BASH_SOURCE[0]}"
-    SUFFIX="${1:-dev}"
+    SUFFIX=${1:-dev}
 
     # Resolve the absolute path to the directory containing the script
     REPO_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -34,28 +36,31 @@ main() {
         # If already in a sanitized environment, just run the script
         echo "Running in a sanitized environment:"
         cd  # $HOME
-        deploy "$SUFFIX"
+        deploy "$REPO_DIR" $SUFFIX
     fi
 }
 
 # Define deploy function with argument
 deploy() {
-    local SUFFIX="$1"
+    local REPO_DIR="$1"
+    local SUFFIX="$2"
     echo "Running deploy() in $(pwd) with SUFFIX=$SUFFIX"
     env
     echo
+    TARGET_ENV="$PWD/aws-object-search-$SUFFIX"
     # Phase 1: Get micromamba.
-    bash repo/scripts/fetch-micromamba.sh
+    bash "$REPO_DIR"/scripts/fetch-micromamba.sh
     # Phase 2: Create deployment environment.
-    ./micromamba create -y -p ./aws-object-search-$SUFFIX python=3.13 uv
+    ./micromamba create -y -p "$TARGET_ENV" python=$PYTHON_VERSION uv
     # Phase 3: Populate deployment environment with applicatien.
-    export PATH=$PWD/aws-object-search-dev/bin:$PATH
+    export PATH="$TARGET_ENV"/bin:$PATH
     if [[ $SUFFIX == "dev" ]]; then
         EDITABLE="-e"
     else
         EDITABLE=""
     fi
-    uv pip install --system $EDITABLE repo
+    echo uv pip install --system $EDITABLE "$REPO_DIR"
+    uv pip install --system $EDITABLE "$REPO_DIR"
     # Phase 4: create output directory.
     mkdir -p s3_objects
 }

@@ -6,5 +6,4 @@ __pycache__/
 .venv
 env
 venv
-bucket-scans
-s3_objects/
+/build/
