@@ -3,9 +3,16 @@
 # This script populates the directory ABOVE the repository root with the
 # deployed software and the output directory.
 #
+# This script does not have any dependencies beyond posix and curl. It downloads
+# micromamba, uses micromamba to create a standalone Python deployment
+# containing the "uv" tool, and then uses "uv pip install" to install the
+# software.
+#
 # Suppose the filesystem looked like this:
 # aws-object-search
 # └── git
+#     ├── deploy
+#     └── ...
 #
 # After running "./git/deploy SUFFIX", the filesystem would look like this.
 # aws-object-search
