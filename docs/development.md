@@ -23,8 +23,8 @@ mkdir -p aws-object-search
 cd aws-object-search
 
 # One of these
-git clone git@github.com:BCM-HGSC/aws-object-search.git repo
-git clone https://github.com/BCM-HGSC/aws-object-search.git repo
+git clone git@github.com:BCM-HGSC/aws-object-search.git git
+git clone https://github.com/BCM-HGSC/aws-object-search.git git
 
 # For production deployments, you must selet a software version:
 VERSION=  # will default to "dev" if not set

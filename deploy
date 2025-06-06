@@ -5,13 +5,13 @@
 #
 # Suppose the filesystem looked like this:
 # aws-object-search
-# └── repo
+# └── git
 #
-# After running "./repo/deploy SUFFIX", the filesystem would look like this.
+# After running "./git/deploy SUFFIX", the filesystem would look like this.
 # aws-object-search
 # ├── aws-object-search-SUFFIX
 # ├── micromamba
-# ├── repo
+# ├── git
 # └── s3_objects
 #
 # The default SUFFIX is "dev".
