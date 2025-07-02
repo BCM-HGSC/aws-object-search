@@ -9,7 +9,9 @@ Deploy the software for development:
 ./deploy
 ```
 
-This creates an `aws-object-search-dev` directory with the development environment.
+This creates an `aws-object-search-dev` directory with the development environment and all dependencies already installed.
+
+Although the `deploy` script uses `uv`, there is no need for developers to use `uv` unless they are changing entry points or dependencies.
 
 For AWS operations, ensure you have:
 ```bash
@@ -22,33 +24,41 @@ aws sso login
 ### Testing
 ```bash
 # Run all tests
-pytest
+./env/bin/pytest
 
 # Run specific test file
-pytest tests/test_catalog.py
+./env/bin/pytest tests/test_catalog.py
 
 # Run integration tests (marked with @pytest.mark.integration)
-pytest -m integration
+./env/bin/pytest -m integration
 ```
 
-### Installation/Development
+### Updates in Development
+This is only necessary when changing entry points or dependencies:
+
 ```bash
 # Install in development mode (editable)
-uv pip install --system -e .
-
-# Install with dev dependencies
 uv pip install --system -e ".[dev]"
 ```
 
-### Running the Tools
+### Running the Tools in Development
+There is a symlink in the project root named `env` that points to the devault development environment at `../aws-object-search-dev`.
+There is a `bin` in the project root with symlinks to executables in `env/bin/`.
+
+
 ```bash
 # Scan S3 buckets with prefix
-./aws-object-search-dev/bin/aos-scan --bucket-prefix hgsc-b
+bin/aos-scan --bucket-prefix hgsc-b
 
 # Search the index
-./aws-object-search-dev/bin/aos-search s3_objects "search query"
+bin/aos-search s3_objects "search query"
 
-# Legacy brute-force search
+# Search the index
+bin/search-aws
+bin/search.py
+
+
+# Legacy brute-force search (should never need to run)
 python bin/searchGlacier.py
 ```
 
@@ -56,14 +66,16 @@ python bin/searchGlacier.py
 
 This is an S3 object search system with two main phases:
 
+### Phase 0: CLI entry points
+- **Entry Points** (`entry.py`): Command-line interfaces for both scan and search operations
+
 ### Phase 1: Scanning and Indexing (`aos-scan`)
 - **S3 Scanner** (`s3_wrapper.py`): Lists all objects in S3 buckets, outputs to TSV files
-- **Indexer** (`tantivy_wrapper.py`): Ingests TSV catalog files into a Tantivy search index
 - **Catalog Management** (`catalog.py`): Handles TSV file operations and metadata
+- **Indexer** (`tantivy_wrapper.py`): Ingests TSV catalog files into a Tantivy search index
 
 ### Phase 2: Searching (`aos-search`)
 - **Search Interface** (`tantivy_wrapper.py`): Queries the Tantivy index
-- **Entry Points** (`entry.py`): Command-line interfaces for both scan and search operations
 
 ### Key Components
 - `src/aws_object_search/s3_wrapper.py`: AWS S3 interaction, bucket scanning
