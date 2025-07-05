@@ -15,7 +15,7 @@ Although the `deploy` script uses `uv`, there is no need for developers to use `
 
 For AWS operations, ensure you have:
 ```bash
-export AWS_PROFILE=prod-sub  # or appropriate profile
+export AWS_PROFILE=scan-dev  # or appropriate profile
 aws sso login
 ```
 
