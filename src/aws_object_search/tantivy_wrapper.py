@@ -19,6 +19,36 @@ def search_index(index_path: Path | str, query: str) -> None:
         print(f"{score:06.2f}", doc["bucket_name"][0], doc["key"][0], sep="\t")
 
 
+def search_index_simple(
+    index_path: Path | str,
+    query: str,
+    latest: bool = False,
+    no_file_sizes: bool = False,
+) -> None:
+    "Search for query with simple output format for search-aws."
+    results = list(run_query(index_path, query))
+
+    if latest:
+        # Group by key and select most recent (highest score)
+        key_groups = {}
+        for score, doc in results:
+            key = doc["key"][0]
+            if key not in key_groups or score > key_groups[key][0]:
+                key_groups[key] = (score, doc)
+        results = list(key_groups.values())
+
+    for _score, doc in results:
+        bucket_name = doc["bucket_name"][0]
+        key = doc["key"][0]
+        s3_uri = f"s3://{bucket_name}/{key}"
+
+        if no_file_sizes:
+            print(s3_uri)
+        else:
+            size = doc.get("size", [""])[0]
+            print(f"{s3_uri}\t{size}")
+
+
 def run_query(
     index_path: Path | str, query_str: str
 ) -> Iterable[tuple[float, dict[str, str]]]:

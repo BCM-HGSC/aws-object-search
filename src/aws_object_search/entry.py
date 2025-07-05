@@ -8,7 +8,7 @@ import botocore.exceptions
 from . import __version__
 from .logging import config_logging
 from .s3_wrapper import run_s3_object_scan
-from .tantivy_wrapper import index_catalog, search_index
+from .tantivy_wrapper import index_catalog, search_index, search_index_simple
 
 
 logger = getLogger(__name__)
@@ -118,6 +118,76 @@ def parse_search_args() -> argparse.Namespace:
     parser.add_argument(
         "query",
         help="Query string to search for",
+    )
+    parser.add_argument(
+        "--log-level",
+        type=str,
+        default="WARNING",
+        help="Logging level (default: WARNING)",
+    )
+    return parser.parse_args()
+
+
+def search_aws(args: argparse.Namespace | None = None) -> None:
+    "Entry point for searching the index with simple output."
+    if args is None:
+        args = parse_search_aws_args()
+    config_logging(args.log_level)
+    logger.info(f"Parent directory: {args.parent_dir}")
+    logger.info(f"Query string: '{args.query}'")
+    try:
+        search_index_simple(
+            args.parent_dir / "index",
+            args.query,
+            latest=args.latest,
+            no_file_sizes=args.no_file_sizes,
+        )
+    except BrokenPipeError:
+        pass  # normal; for example, piped to "head" command
+    stderr.close()
+    exit(0)
+
+
+def parse_search_aws_args() -> argparse.Namespace:
+    "Parse command line arguments for search-aws."
+    parser = argparse.ArgumentParser(
+        description="Search index of keys in AWS S3 buckets with simple output."
+    )
+    parser.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help="Show the version of the program",
+    )
+    parser.add_argument(
+        "query",
+        help="Query string to search for",
+    )
+    parser.add_argument(
+        "-l",
+        "--latest",
+        action="store_true",
+        help="Select the most recent matches for each input line",
+    )
+    parser.add_argument(
+        "-m",
+        "--max-results-per-query",
+        type=int,
+        default=10000000,
+        help="Maximum results per query (default: 10000000)",
+    )
+    parser.add_argument(
+        "-s",
+        "--no-file-sizes",
+        action="store_true",
+        help="Suppress including size of files in the output",
+    )
+    parser.add_argument(
+        "--parent-dir",
+        type=Path,
+        default=Path("./s3_objects"),
+        help="Directory containing the scan output files (default: ./s3_objects)",
     )
     parser.add_argument(
         "--log-level",
