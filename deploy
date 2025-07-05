@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# This script populates the directory ABOVE the repository root with the
-# deployed software and the output directory.
+# This script populates the specified target directory with the deployed
+# software and the output directory (named "s3_objects"). The default target
+# directory is the parent the repository root.
 #
 # This script does not have any dependencies beyond posix and curl. It downloads
 # micromamba, uses micromamba to create a standalone Python deployment
@@ -22,6 +23,24 @@
 # └── s3_objects
 #
 # The default SUFFIX is "dev".
+#
+# Production invocation from source directory:
+# VERSION=1.0.0  # select desired version
+# REPO_DIR=...
+# TARGET_DIR=...  # the default is $REPO_DIR/..
+# cd $REPO_DIR
+# git checkout v$VERSION
+# ./deploy -p  $VERSION
+#
+# Resulting production tree:
+# $TARGET_DIR
+# ├── aws-object-search-$VERSION
+# │   └── bin
+# │       ├── aos-scan (used by cron to update s3_objects)
+# │       ├── search-aws
+# │       └── search.py
+# ├── micromamba
+# └── s3_objects (the index of S3)
 
 set -euo pipefail
 # set -x
@@ -32,6 +51,7 @@ PYTHON_VERSION=3.13
 REPO_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Set default values
+PREFIX="$( dirname "$REPO_DIR" )"
 SUFFIX="dev"
 
 
@@ -45,9 +65,10 @@ main() {
     else
         # If already in a sanitized environment, just run the script
         echo "Running in a sanitized environment:"
-        cd  # $HOME
         echo "REPO_DIR: $REPO_DIR"
+        echo "PREFIX:   $PREFIX"
         echo "SUFFIX:   $SUFFIX"
+        cd "$PREFIX"
         export HOME="$PWD"
         deploy
     fi
@@ -61,6 +82,10 @@ parse_args() {
     # Parse command line options
     while [[ $# -gt 0 ]]; do
         case $1 in
+            -p|--prefix)
+                PREFIX="$2"
+                shift 2
+                ;;
             -h|--help)
                 show_usage
                 exit 0
