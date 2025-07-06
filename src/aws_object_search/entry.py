@@ -1,7 +1,7 @@
 import argparse
 from logging import getLogger
 from pathlib import Path
-from sys import exit, stderr
+from sys import exit, prefix, stderr
 
 import botocore.exceptions
 
@@ -12,6 +12,9 @@ from .tantivy_wrapper import index_catalog, search_index, search_index_simple
 
 
 logger = getLogger(__name__)
+
+# Default directory for catalog and index files
+DEFAULT_PARENT_DIR = Path(prefix).resolve().parent / "s3_objects"
 
 
 def aos_scan(args: argparse.Namespace | None = None) -> None:
@@ -59,10 +62,11 @@ def parse_scan_args() -> argparse.Namespace:
         help="Optional prefix to filter bucket names",
     )
     parser.add_argument(
+        "-p",
         "--parent-dir",
         type=Path,
-        default=Path("./s3_objects"),
-        help="Parent directory for output files (default: ./s3_objects)",
+        default=DEFAULT_PARENT_DIR,
+        help=f"Parent directory for output files (default: {DEFAULT_PARENT_DIR})",
     )
     parser.add_argument(
         "--no-scan",
@@ -111,13 +115,15 @@ def parse_search_args() -> argparse.Namespace:
         help="Show the version of the program",
     )
     parser.add_argument(
-        "parent_dir",
-        type=Path,
-        help="Directory containing the scan output files",
-    )
-    parser.add_argument(
         "query",
         help="Query string to search for",
+    )
+    parser.add_argument(
+        "-p",
+        "--parent-dir",
+        type=Path,
+        default=DEFAULT_PARENT_DIR,
+        help=f"Directory containing the scan output files (default: {DEFAULT_PARENT_DIR})",
     )
     parser.add_argument(
         "--log-level",
@@ -184,10 +190,11 @@ def parse_search_aws_args() -> argparse.Namespace:
         help="Suppress including size of files in the output",
     )
     parser.add_argument(
+        "-p",
         "--parent-dir",
         type=Path,
-        default=Path("./s3_objects"),
-        help="Directory containing the scan output files (default: ./s3_objects)",
+        default=DEFAULT_PARENT_DIR,
+        help=f"Directory containing the scan output files (default: {DEFAULT_PARENT_DIR})",
     )
     parser.add_argument(
         "--log-level",
