@@ -146,7 +146,6 @@ def search_aws(args: argparse.Namespace | None = None) -> None:
             args.parent_dir / "index",
             args.query,
             latest=args.latest,
-            no_file_sizes=args.no_file_sizes,
         )
     except BrokenPipeError:
         pass  # normal; for example, piped to "head" command
@@ -182,12 +181,6 @@ def parse_search_aws_args() -> argparse.Namespace:
         type=int,
         default=10000000,
         help="Maximum results per query (default: 10000000)",
-    )
-    parser.add_argument(
-        "-s",
-        "--no-file-sizes",
-        action="store_true",
-        help="Suppress including size of files in the output",
     )
     parser.add_argument(
         "-p",

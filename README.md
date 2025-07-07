@@ -108,8 +108,6 @@ The search-aws script uses provided string to search the archive databases. You 
 
 `-m/--max-results-per-query MAX_RESULTS_PER_QUERY`: **NOT IMPLEMENTED**. Maximum results per query. (Default is 10,000,000. No need to set this.)
 
-`-s/--no-file-sizes`: Suppress including size of files in the output.
-
 #### Example:
 
 ```shell

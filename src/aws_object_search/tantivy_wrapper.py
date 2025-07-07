@@ -23,7 +23,6 @@ def search_index_simple(
     index_path: Path | str,
     query: str,
     latest: bool = False,
-    no_file_sizes: bool = False,
 ) -> None:
     "Search for query with simple output format for search-aws."
     results = list(run_query(index_path, query))
@@ -41,12 +40,11 @@ def search_index_simple(
         bucket_name = doc["bucket_name"][0]
         key = doc["key"][0]
         s3_uri = f"s3://{bucket_name}/{key}"
-
-        if no_file_sizes:
-            print(s3_uri)
-        else:
-            size = doc.get("size", [""])[0]
-            print(f"{s3_uri}\t{size}")
+        size = doc.get("size", [""])[0]
+        last_modified = doc.get("last_modified", [""])[0]
+        storage_class = doc.get("storage_class", [""])[0]
+        
+        print(f"{s3_uri}\t{size}\t{last_modified}\t{storage_class}")
 
 
 def run_query(
