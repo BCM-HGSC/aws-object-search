@@ -1,6 +1,6 @@
 import argparse
-from pathlib import Path
 from logging import getLogger
+from pathlib import Path
 from sys import exit, stderr
 
 import botocore.exceptions

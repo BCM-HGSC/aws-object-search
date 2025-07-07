@@ -1,10 +1,10 @@
 from logging import (
-    basicConfig,
     ERROR,
-    getLevelNamesMapping,
-    getLogger,
     INFO,
     StreamHandler,
+    basicConfig,
+    getLevelNamesMapping,
+    getLogger,
 )
 
 try:

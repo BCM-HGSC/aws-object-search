@@ -4,7 +4,6 @@ Local catalog of the contents of cloud objects (S3/glacier).
 
 import csv
 import gzip
-
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from logging import getLogger
