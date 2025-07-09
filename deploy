@@ -1,33 +1,63 @@
 #!/bin/bash
 
-# This script populates the directory ABOVE the repository root with the
-# deployed software and the output directory.
+# This script populates the specified target directory with the deployed
+# software and the output directory (named "s3_objects"). The default target
+# directory is the parent the repository root.
+#
+# This script does not have any dependencies beyond posix and curl. It downloads
+# micromamba, uses micromamba to create a standalone Python deployment
+# containing the "uv" tool, and then uses "uv pip install" to install the
+# software.
 #
 # Suppose the filesystem looked like this:
 # aws-object-search
-# └── repo
+# └── git
+#     ├── deploy
+#     └── ...
 #
-# After running "./repo/deploy SUFFIX", the filesystem would look like this.
+# After running "./git/deploy SUFFIX", the filesystem would look like this.
 # aws-object-search
 # ├── aws-object-search-SUFFIX
 # ├── micromamba
-# ├── repo
+# ├── git
 # └── s3_objects
 #
 # The default SUFFIX is "dev".
+#
+# Production invocation from source directory:
+# VERSION=1.0.0  # select desired version
+# REPO_DIR=...
+# TARGET_DIR=...  # the default is $REPO_DIR/..
+# cd $REPO_DIR
+# git checkout v$VERSION
+# ./deploy -p  $VERSION
+#
+# Resulting production tree:
+# $TARGET_DIR
+# ├── aws-object-search-$VERSION
+# │   └── bin
+# │       ├── aos-scan (used by cron to update s3_objects)
+# │       ├── search-aws
+# │       └── search.py
+# ├── micromamba
+# └── s3_objects (the index of S3)
 
 set -euo pipefail
 # set -x
 
 PYTHON_VERSION=3.13
 
+# Resolve the absolute path to the directory containing the script
+REPO_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Set default values
+PREFIX="$( dirname "$REPO_DIR" )"
+SUFFIX="dev"
+
+
 main() {
+    parse_args "$@"
     THIS_SCRIPT="${BASH_SOURCE[0]}"
-    SUFFIX=${1:-dev}
-
-    # Resolve the absolute path to the directory containing the script
-    REPO_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
     if [[ -z "${__SANITIZED_ENV:+x}" ]]; then
         # If not already in a sanitized environment, run the script in a sanitized environment
         echo "Sanitizing environment"
@@ -35,19 +65,79 @@ main() {
     else
         # If already in a sanitized environment, just run the script
         echo "Running in a sanitized environment:"
-        cd  # $HOME
-        deploy "$REPO_DIR" $SUFFIX
+        echo "REPO_DIR: $REPO_DIR"
+        echo "PREFIX:   $PREFIX"
+        echo "SUFFIX:   $SUFFIX"
+        cd "$PREFIX"
+        export HOME="$PWD"
+        deploy
     fi
 }
 
-# Define deploy function with argument
+
+parse_args() {
+    # Variable to track if SUFFIX has been set
+    local SUFFIX_SET=false
+
+    # Parse command line options
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -p|--prefix)
+                PREFIX="$2"
+                shift 2
+                ;;
+            -h|--help)
+                show_usage
+                exit 0
+                ;;
+            -*)
+                echo "Unknown option $1" >&2
+                show_usage >&2
+                exit 1
+                ;;
+            *)
+                # This is the positional parameter for SUFFIX
+                if [[ "$SUFFIX_SET" == true ]]; then
+                    echo "Error: Too many arguments. Only one positional parameter (SUFFIX) is allowed." >&2
+                    show_usage >&2
+                    exit 1
+                fi
+                SUFFIX="$1"
+                SUFFIX_SET=true
+                shift
+                ;;
+        esac
+    done
+}
+
+
+show_usage() {
+    echo "Usage: $0 [-p|--prefix PREFIX] [-h|--help] [SUFFIX]"
+    echo ""
+    echo "Options:"
+    echo "  -p, --prefix PREFIX    Set prefix value (default: '..')"
+    echo "  -h, --help            Show this help message"
+    echo ""
+    echo "Arguments:"
+    echo "  SUFFIX                Set suffix value (default: 'dev')"
+    echo ""
+    echo "Examples:"
+    echo "  $0                    # Use defaults"
+    echo "  $0 -p /home/user      # Set prefix only"
+    echo "  $0 prod               # Set suffix only"
+    echo "  $0 --prefix /opt staging  # Set both prefix and suffix"
+}
+
+
 deploy() {
-    local REPO_DIR="$1"
-    local SUFFIX="$2"
-    echo "Running deploy() in $(pwd) with SUFFIX=$SUFFIX"
+    echo "Running deploy() in $PWD with SUFFIX=$SUFFIX"
+    echo
+    echo "env:"
     env
     echo
     TARGET_ENV="$PWD/aws-object-search-$SUFFIX"
+    echo TARGET_ENV=$TARGET_ENV
+
     # Phase 1: Get micromamba.
     bash "$REPO_DIR"/scripts/fetch-micromamba.sh
     # Phase 2: Create deployment environment.

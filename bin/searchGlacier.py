@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-import boto3
 import argparse
-import sys
-import logging
-from time import strftime
 import csv
 import json
+import logging
 import re
+import sys
+from time import strftime
+
+import boto3
 
 
 """

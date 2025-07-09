@@ -7,7 +7,7 @@ ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd )"
 
 exec /usr/bin/env -i HOME="$ROOT" LOGNAME=$LOGNAME USER=$USER \
     PATH=/usr/bin:/bin \
-    SHELL="$SHELL" \
+    SHELL=/bin/bash \
     TERM="$TERM" \
     __SANITIZED_ENV=1 \
     "$@"

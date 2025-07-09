@@ -12,7 +12,7 @@ Ensure that you have selected the relevant profile and are logged into the AWS S
 WH: My login looks like this:
 
 ```bash
-export AWS_PROFILE=prod-sub
+export AWS_PROFILE=scan-dev
 aws sso login
 ```
 
@@ -23,14 +23,17 @@ mkdir -p aws-object-search
 cd aws-object-search
 
 # One of these
-git clone git@github.com:BCM-HGSC/aws-object-search.git repo
-git clone https://github.com/BCM-HGSC/aws-object-search.git repo
+git clone git@github.com:BCM-HGSC/aws-object-search.git git
+git clone https://github.com/BCM-HGSC/aws-object-search.git git
+cd git
+
+# For development, you normally do not check out a particular version, except for testing:
+./deploy
 
 # For production deployments, you must selet a software version:
-VERSION=  # will default to "dev" if not set
-
-# The $VERSION argument is optional and will default to "dev"
-./repo/deploy $VERSION
+VERSION=1.0.0
+git checkout v"$VERSION"
+./deploy "$VERSION"  # will default to "dev" if not set
 ```
 
 The `deploy` script will ignore the contents of your home directory.
