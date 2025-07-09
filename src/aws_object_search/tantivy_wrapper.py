@@ -41,6 +41,7 @@ def search_index_simple(
     index_path: Path | str,
     query: str,
     latest: bool = False,
+    uri_only: bool = False,
 ) -> None:
     "Search for query with simple output format for search-aws."
     results = list(run_query(index_path, query))
@@ -58,11 +59,13 @@ def search_index_simple(
         bucket_name = doc.bucket_name
         key = doc.key
         s3_uri = f"s3://{bucket_name}/{key}"
-        size = doc.size
-        last_modified = doc.last_modified
-        storage_class = doc.storage_class
-
-        print(f"{s3_uri}\t{size}\t{last_modified}\t{storage_class}")
+        if uri_only:
+            print(s3_uri)
+        else:
+            size = doc.size
+            last_modified = doc.last_modified
+            storage_class = doc.storage_class
+            print(f"{s3_uri}\t{size}\t{last_modified}\t{storage_class}")
 
 
 def run_query(
@@ -82,7 +85,7 @@ def run_query(
 
         # Create S3ObjectResult with default values
         result = S3ObjectResult()
-        
+
         # Update fields from document
         for field in result.__dataclass_fields__:
             if field in doc_dict:

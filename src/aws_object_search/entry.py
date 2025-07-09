@@ -146,6 +146,7 @@ def search_aws(args: argparse.Namespace | None = None) -> None:
             args.output_root / "index",
             args.query,
             latest=args.latest,
+            uri_only=args.uri_only,
         )
     except BrokenPipeError:
         pass  # normal; for example, piped to "head" command
@@ -188,6 +189,12 @@ def parse_search_aws_args() -> argparse.Namespace:
         type=Path,
         default=DEFAULT_OUTPUT_ROOT,
         help=f"Output root directory containing the scan files (default: {DEFAULT_OUTPUT_ROOT})",
+    )
+    parser.add_argument(
+        "-u",
+        "--uri-only",
+        action="store_true",
+        help="Suppress all output except for the S3 URIs",
     )
     parser.add_argument(
         "--log-level",
