@@ -108,6 +108,8 @@ The search-aws script uses provided string to search the archive databases. You 
 
 `-m/--max-results-per-query MAX_RESULTS_PER_QUERY`: **NOT IMPLEMENTED**. Maximum results per query. (Default is 10,000,000. No need to set this.)
 
+`-u/--uri-only`: Suppress all output in the primary file (FILE.out.tsv) except for the S3 URIs.
+
 #### Example:
 
 ```shell
