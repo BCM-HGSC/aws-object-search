@@ -17,6 +17,7 @@ logger = getLogger(__name__)
 @dataclass
 class S3ObjectResult:
     """Data class representing an S3 object search result."""
+
     last_scan_timestamp: str = "MISSING"
     bucket_name: str = "MISSING"
     last_modified: str = "MISSING"
