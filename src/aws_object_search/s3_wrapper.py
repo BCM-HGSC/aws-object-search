@@ -11,27 +11,27 @@ logger = getLogger(__name__)
 
 
 def run_s3_object_scan(
-    parent_dir: str | Path,
+    output_root: str | Path,
     bucket_prefix: str | None = None,
     tsv_file_prefix: str | None = None,
     s3_client=None,
 ) -> None:
     """
     Run a scan of S3 buckets and output their objects to TSV files.
-    :param parent_dir: Parent directory for output files
+    :param output_root: Output root directory for generated files
     :param bucket_prefix: Optional prefix to filter bucket names
     :param tsv_file_prefix: Optional value to use instead of timestamp in TSV file names
     :param s3_client: Optional Boto3 S3 client
     """
-    if not isinstance(parent_dir, (str, Path)):
+    if not isinstance(output_root, (str, Path)):
         raise TypeError(
-            f"Parent directory {parent_dir!r} must be a string or Path or None"
+            f"Output root directory {output_root!r} must be a string or Path or None"
         )
     if not isinstance(bucket_prefix, (str, type(None))):
         raise TypeError("Bucket prefix must be a string or None")
 
     scanner = BucketScanner(s3_client)
-    writer = S3ObjectCatalog(parent_dir)
+    writer = S3ObjectCatalog(output_root)
 
     buckets = scanner.list_buckets_with_prefix(bucket_prefix)
     for bucket in buckets:

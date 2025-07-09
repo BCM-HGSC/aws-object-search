@@ -14,7 +14,7 @@ from .tantivy_wrapper import index_catalog, search_index, search_index_simple
 logger = getLogger(__name__)
 
 # Default directory for catalog and index files
-DEFAULT_PARENT_DIR = Path(prefix).resolve().parent / "s3_objects"
+DEFAULT_OUTPUT_ROOT = Path(prefix).resolve().parent / "s3_objects"
 
 
 def aos_scan(args: argparse.Namespace | None = None) -> None:
@@ -23,14 +23,14 @@ def aos_scan(args: argparse.Namespace | None = None) -> None:
         args = parse_scan_args()
     config_logging(args.log_level)
     logger.info(f"Bucket prefix: {args.bucket_prefix}")
-    logger.info(f"Parent directory: {args.parent_dir}")
+    logger.info(f"Output root: {args.output_root}")
     logger.info(f"Scanning: {not args.no_scan}")
     logger.info(f"Indexing: {not args.no_index}")
     if not args.no_scan:
         logger.info("Scanning AWS Objects...")
         try:
             run_s3_object_scan(
-                args.parent_dir,
+                args.output_root,
                 args.bucket_prefix,
             )
         except botocore.exceptions.TokenRetrievalError as e:
@@ -40,7 +40,7 @@ def aos_scan(args: argparse.Namespace | None = None) -> None:
             logger.info("Scan completed successfully.")
     if not args.no_index:
         logger.info("Indexing S3 objects...")
-        index_catalog(args.parent_dir, args.parent_dir / "index")
+        index_catalog(args.output_root, args.output_root / "index")
 
 
 def parse_scan_args() -> argparse.Namespace:
@@ -62,11 +62,11 @@ def parse_scan_args() -> argparse.Namespace:
         help="Optional prefix to filter bucket names",
     )
     parser.add_argument(
-        "-p",
-        "--parent-dir",
+        "-o",
+        "--output-root",
         type=Path,
-        default=DEFAULT_PARENT_DIR,
-        help=f"Parent directory for output files (default: {DEFAULT_PARENT_DIR})",
+        default=DEFAULT_OUTPUT_ROOT,
+        help=f"Output root directory for generated files (default: {DEFAULT_OUTPUT_ROOT})",
     )
     parser.add_argument(
         "--no-scan",
@@ -92,10 +92,10 @@ def aos_search(args: argparse.Namespace | None = None) -> None:
     if args is None:
         args = parse_search_args()
     config_logging(args.log_level)
-    logger.info(f"Parent directory: {args.parent_dir}")
+    logger.info(f"Output root: {args.output_root}")
     logger.info(f"Query string: '{args.query}'")
     try:
-        search_index(args.parent_dir / "index", args.query)
+        search_index(args.output_root / "index", args.query)
     except BrokenPipeError:
         pass  # normal; for example, piped to "head" command
     stderr.close()
@@ -119,11 +119,11 @@ def parse_search_args() -> argparse.Namespace:
         help="Query string to search for",
     )
     parser.add_argument(
-        "-p",
-        "--parent-dir",
+        "-o",
+        "--output-root",
         type=Path,
-        default=DEFAULT_PARENT_DIR,
-        help=f"Directory containing the scan output files (default: {DEFAULT_PARENT_DIR})",
+        default=DEFAULT_OUTPUT_ROOT,
+        help=f"Output root directory containing the scan files (default: {DEFAULT_OUTPUT_ROOT})",
     )
     parser.add_argument(
         "--log-level",
@@ -139,11 +139,11 @@ def search_aws(args: argparse.Namespace | None = None) -> None:
     if args is None:
         args = parse_search_aws_args()
     config_logging(args.log_level)
-    logger.info(f"Parent directory: {args.parent_dir}")
+    logger.info(f"Output root: {args.output_root}")
     logger.info(f"Query string: '{args.query}'")
     try:
         search_index_simple(
-            args.parent_dir / "index",
+            args.output_root / "index",
             args.query,
             latest=args.latest,
         )
@@ -183,11 +183,11 @@ def parse_search_aws_args() -> argparse.Namespace:
         help="Maximum results per query (default: 10000000)",
     )
     parser.add_argument(
-        "-p",
-        "--parent-dir",
+        "-o",
+        "--output-root",
         type=Path,
-        default=DEFAULT_PARENT_DIR,
-        help=f"Directory containing the scan output files (default: {DEFAULT_PARENT_DIR})",
+        default=DEFAULT_OUTPUT_ROOT,
+        help=f"Output root directory containing the scan files (default: {DEFAULT_OUTPUT_ROOT})",
     )
     parser.add_argument(
         "--log-level",
