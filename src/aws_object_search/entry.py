@@ -145,7 +145,6 @@ def search_aws(args: argparse.Namespace | None = None) -> None:
         search_index_simple(
             args.output_root / "index",
             args.query,
-            latest=args.latest,
             uri_only=args.uri_only,
         )
     except BrokenPipeError:
@@ -169,12 +168,6 @@ def parse_search_aws_args() -> argparse.Namespace:
     parser.add_argument(
         "query",
         help="Query string to search for",
-    )
-    parser.add_argument(
-        "-l",
-        "--latest",
-        action="store_true",
-        help="Select the most recent matches for each input line",
     )
     parser.add_argument(
         "-m",

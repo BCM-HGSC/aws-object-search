@@ -40,20 +40,10 @@ def search_index(index_path: Path | str, query: str) -> None:
 def search_index_simple(
     index_path: Path | str,
     query: str,
-    latest: bool = False,
     uri_only: bool = False,
 ) -> None:
     "Search for query with simple output format for search-aws."
     results = list(run_query(index_path, query))
-
-    if latest:
-        # Group by key and select most recent (highest score)
-        key_groups = {}
-        for score, doc in results:
-            key = doc.key
-            if key not in key_groups or score > key_groups[key]:
-                key_groups[key] = (score, doc)
-        results = list(key_groups.values())
 
     for _score, doc in results:
         bucket_name = doc.bucket_name
