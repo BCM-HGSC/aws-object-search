@@ -68,8 +68,6 @@ You must specify which database to use or it defaults to the Production one.
 
 `-f/--file FILE`: Input file (`-f` is optional but `FILE` is not.)
 
-`-l/--latest`: This will select the most recent matches for each input line
-
 `-m/--max-results-per-query MAX_RESULTS_PER_QUERY`: **NOT IMPLEMENTED**. Maximum results per query. (Default is 10,000,000. No need to set this.)
 
 `-u/--uri-only`: Suppress all output in the primary file (FILE.out.tsv) except for the S3 URIs.
@@ -103,8 +101,6 @@ The search-aws script uses provided string to search the archive databases. You 
 `-h/--help`: Output available options
 
 `-V/--version`: Print the version and exit
-
-`-l/--latest`: This will select the most recent matches for each input line
 
 `-m/--max-results-per-query MAX_RESULTS_PER_QUERY`: **NOT IMPLEMENTED**. Maximum results per query. (Default is 10,000,000. No need to set this.)
 
