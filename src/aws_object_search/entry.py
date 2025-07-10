@@ -179,8 +179,8 @@ def parse_search_aws_args() -> argparse.Namespace:
         "-m",
         "--max-results-per-query",
         type=int,
-        default=10000000,
-        help="Maximum results per query (default: 10000000)",
+        default=10_000_000,
+        help="Maximum results per query (default: 10,000,000)",
     )
     parser.add_argument(
         "-o",
