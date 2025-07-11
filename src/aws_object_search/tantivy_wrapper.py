@@ -41,9 +41,10 @@ def search_index_simple(
     index_path: Path | str,
     query: str,
     uri_only: bool = False,
+    max_results: int = 1000,
 ) -> None:
     "Search for query with simple output format for search-aws."
-    results = list(run_query(index_path, query))
+    results = list(run_query(index_path, query, max_results))
 
     for _score, doc in results:
         bucket_name = doc.bucket_name
@@ -59,15 +60,14 @@ def search_index_simple(
 
 
 def run_query(
-    index_path: Path | str, query_str: str
+    index_path: Path | str, query_str: str, max_results: int = 1000
 ) -> Iterable[tuple[float, S3ObjectResult]]:
     "Search for query and generate (score, S3ObjectResult) pairs."
     schema = build_schema()
     index = tantivy.Index(schema, str(index_path))
     query_obj = index.parse_query(query_str, ["key"])
     searcher = index.searcher()
-    # TODO: page results beyond 1000
-    results = searcher.search(query_obj, 1000)
+    results = searcher.search(query_obj, max_results)
 
     for score, address in results.hits:
         doc = searcher.doc(address)

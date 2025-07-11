@@ -146,6 +146,7 @@ def search_aws(args: argparse.Namespace | None = None) -> None:
             args.output_root / "index",
             args.query,
             uri_only=args.uri_only,
+            max_results=args.max_results_per_query,
         )
     except BrokenPipeError:
         pass  # normal; for example, piped to "head" command
