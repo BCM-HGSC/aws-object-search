@@ -23,7 +23,6 @@ The idea is to create text files that are catalogs of the archive, load those te
 - searcher
     - search.py
     - search-aws
-    - aos-search
 
 ## execution overview
 
