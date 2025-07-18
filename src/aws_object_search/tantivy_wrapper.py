@@ -29,13 +29,6 @@ class S3ObjectResult:
     key: str = "MISSING"
 
 
-def search_index(index_path: Path | str, query: str) -> None:
-    "Search for query."
-    for score, doc in run_query(index_path, query):
-        bucket_name = doc.bucket_name
-        key = doc.key
-        print(f"{score:06.2f}", bucket_name, key, sep="\t")
-
 
 def search_index_simple(
     index_path: Path | str,

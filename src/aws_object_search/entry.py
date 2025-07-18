@@ -8,7 +8,7 @@ import botocore.exceptions
 from . import __version__
 from .logging import config_logging
 from .s3_wrapper import run_s3_object_scan
-from .tantivy_wrapper import index_catalog, search_index, search_index_simple, run_query
+from .tantivy_wrapper import index_catalog, search_index_simple, run_query
 
 
 logger = getLogger(__name__)
@@ -86,52 +86,6 @@ def parse_scan_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-
-def aos_search(args: argparse.Namespace | None = None) -> None:
-    "Entry point for searching the index."
-    if args is None:
-        args = parse_search_args()
-    config_logging(args.log_level)
-    logger.info(f"Output root: {args.output_root}")
-    logger.info(f"Query string: '{args.query}'")
-    try:
-        search_index(args.output_root / "index", args.query)
-    except BrokenPipeError:
-        pass  # normal; for example, piped to "head" command
-    stderr.close()
-    exit(0)
-
-
-def parse_search_args() -> argparse.Namespace:
-    "Parse command line arguments."
-    parser = argparse.ArgumentParser(
-        description="Search index of keys in AWS S3 buckets."
-    )
-    parser.add_argument(
-        "-V",
-        "--version",
-        action="version",
-        version=f"%(prog)s {__version__}",
-        help="Show the version of the program",
-    )
-    parser.add_argument(
-        "query",
-        help="Query string to search for",
-    )
-    parser.add_argument(
-        "-o",
-        "--output-root",
-        type=Path,
-        default=DEFAULT_OUTPUT_ROOT,
-        help=f"Output root directory containing the scan files (default: {DEFAULT_OUTPUT_ROOT})",
-    )
-    parser.add_argument(
-        "--log-level",
-        type=str,
-        default="WARNING",
-        help="Logging level (default: WARNING)",
-    )
-    return parser.parse_args()
 
 
 def search_aws(args: argparse.Namespace | None = None) -> None:
