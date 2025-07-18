@@ -26,6 +26,7 @@ dev = ["pytest>=8.2", "pre-commit>=3.7", "ruff>=0.4.0"]
 aos-scan = "aws_object_search.entry:aos_scan"
 aos-search = "aws_object_search.entry:aos_search"
 search-aws = "aws_object_search.entry:search_aws"
+"search.py" = "aws_object_search.entry:search_py"
 [project.urls]
 Homepage = "https://github.com/BCM-HGSC/aws-object-search"
 Issues = "https://github.com/BCM-HGSC/aws-object-search/issues"
