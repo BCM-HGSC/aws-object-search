@@ -111,7 +111,25 @@ def search_aws(args: argparse.Namespace | None = None) -> None:
 def parse_search_aws_args() -> argparse.Namespace:
     "Parse command line arguments for search-aws."
     parser = argparse.ArgumentParser(
-        description="Search index of keys in AWS S3 buckets with simple output."
+        description="Search index of keys in AWS S3 buckets with simple output.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  search-aws "search_string"
+  search-aws "*.fastq" -u
+  search-aws "SIC1234.*cram" -m 1000
+
+Output format:
+  Unless --uri-only is specified, search results are returned as tab-separated values:
+  
+  Standard columns:
+    s3_uri        size        last_modified        storage_class
+  
+  With --uri-only, only S3 URIs are printed:
+    s3://bucket-name/path/to/file
+  
+  Matching files are printed to standard output.
+"""
     )
     parser.add_argument(
         "-V",
@@ -251,7 +269,31 @@ def search_py(args: argparse.Namespace | None = None) -> None:
 def parse_search_py_args() -> argparse.Namespace:
     "Parse command line arguments for search.py."
     parser = argparse.ArgumentParser(
-        description="Search index of keys in AWS S3 buckets using input file with search terms."
+        description="Search index of keys in AWS S3 buckets using input file with search terms.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  search.py inputlist.txt
+  search.py -f inputlist.txt
+  search.py inputlist.txt --uri-only
+
+Output files:
+  FILE.out.tsv        - Tab-separated list of matching S3 objects
+  FILE.out.info       - Extra information (match count and date archived)
+  FILE.not_found.txt  - Input lines that did not match (with errors)
+  FILE.not_found.list - Clean list of input lines that did not match
+
+Output format:
+  Unless --uri-only is specified, FILE.out.tsv contains tab-separated values:
+  
+  Standard columns:
+    s3_uri        size        last_modified        storage_class
+  
+  With --uri-only, FILE.out.tsv contains only S3 URIs:
+    s3://bucket-name/path/to/file
+  
+  Note: FILE is the path of input file as provided by the user.
+"""
     )
     parser.add_argument(
         "-V",
