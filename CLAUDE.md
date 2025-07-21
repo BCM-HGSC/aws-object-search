@@ -54,6 +54,8 @@ bin/aos-scan --bucket-prefix hgsc-b
 bin/search-aws
 bin/search.py
 
+# Using ruff to check PATH/TO/FILE
+bin/ruff check PATH/TO/FILE
 
 # Legacy brute-force search (should never need to run)
 python bin/searchGlacier.py
