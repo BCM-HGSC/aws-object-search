@@ -5,6 +5,18 @@ collection of S3 buckets.
 
 ## Development Setup
 
+### Prerequisites
+
+**SSH keys are recommended** for GitHub access. Everything gets easier with SSH authentication. If you refuse to use SSH, you will need a personal access token for the HTTPS URL.
+
+For AWS operations, ensure you have:
+```bash
+export AWS_PROFILE=scan-dev  # or appropriate profile
+aws sso login
+```
+
+### Deployment
+
 Deploy the software for development:
 ```bash
 ./deploy
@@ -12,11 +24,14 @@ Deploy the software for development:
 
 This creates an `aws-object-search-dev` directory with the development environment and all dependencies already installed.
 
-For AWS operations, ensure you have:
+For production deployments with a specific version:
 ```bash
-export AWS_PROFILE=scan-dev  # or appropriate profile
-aws sso login
+VERSION=1.0.0
+git checkout v"$VERSION"
+./deploy "$VERSION"  # defaults to "dev" if not set
 ```
+
+The `deploy` script ignores your home directory contents and most environment variables through the `scripts/sanitize-command` script.
 
 ## Testing
 
@@ -183,8 +198,10 @@ The SysAdmin team must:
 - maintain the credentials (secrets) in a protected location `(drwx------)`
 - maintain the cron job that
     - loads the secrets into the environment
-    - runs the scanner and indexer
+    - runs the scanner and indexer (cron jobs should invoke `aos-scan` by absolute path)
 - maintain `/etc/profile.d/asearch.sh`
+
+The software should be deployed so that no activation is required for users to run `search-aws` or `search.py`.
 
 #### production configuration
 
