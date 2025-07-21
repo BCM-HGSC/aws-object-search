@@ -3,12 +3,56 @@
 This repo is a collection of tools to facilitate searching the contents of a
 collection of S3 buckets.
 
+## Development Setup
+
+Deploy the software for development:
+```bash
+./deploy
+```
+
+This creates an `aws-object-search-dev` directory with the development environment and all dependencies already installed.
+
+For AWS operations, ensure you have:
+```bash
+export AWS_PROFILE=scan-dev  # or appropriate profile
+aws sso login
+```
+
+## Testing
+
+```bash
+# Run all tests
+./bin/pytest
+
+# Run specific test file
+./bin/pytest tests/test_catalog.py
+
+# Run integration tests (marked with @pytest.mark.integration)
+./bin/pytest -m integration
+```
+
 ## Tools
 
-- `search.py`: 
-- `search-aws`: 
-- `aos-scan`: scans all buckets or those with a specified prefix to TSV files
-- `python3 bin/searchGlacier.py`: brute-force `O(N)` metadata search of all objects within readable or specified buckets. This script is mainly for reference and should not normally be used. Unless the buckets to be searched are limited, a single search could take several minutes.
+- `search.py`: Main search interface that reads a text file containing search terms and generates output files
+- `search-aws`: Command-line search tool that accepts a single search term and outputs to stdout
+- `aos-scan`: Scans S3 buckets (all or with specified prefix) and generates TSV catalog files, then creates search index
+- `python3 bin/searchGlacier.py`: Legacy brute-force `O(N)` metadata search of all objects within readable or specified buckets. This script is mainly for reference and should not normally be used. Unless the buckets to be searched are limited, a single search could take several minutes.
+
+### Running Tools in Development
+
+There is a `bin/` directory in the project root with symlinks to executables:
+
+```bash
+# Scan S3 buckets with prefix
+bin/aos-scan --bucket-prefix hgsc-b
+
+# Search the index
+bin/search-aws "search_term"
+bin/search.py input_file.txt
+
+# Code quality validation
+bin/ruff check PATH/TO/FILE
+```
 
 ## Technical Architecture
 
