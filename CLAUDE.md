@@ -93,3 +93,11 @@ Production uses versioned deployments via the `deploy` script:
 - Installs package with uv
 - Creates `s3_objects/` output directory
 - In production: symlinked as `current` for stable path reference
+
+## Code Quality and Validation
+
+- Always run ruff to validate new code.
+
+## File Handling Guidelines
+
+- Files should always end with a newline unless the target file format forbids it.
