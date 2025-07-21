@@ -1,15 +1,14 @@
 """Business logic around tantivy."""
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from logging import getLogger
 from pathlib import Path
 from shutil import rmtree
-from typing import Iterable
 
 import tantivy
 
 from .catalog import S3ObjectCatalog
-
 
 logger = getLogger(__name__)
 

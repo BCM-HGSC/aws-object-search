@@ -8,8 +8,7 @@ import botocore.exceptions
 from . import __version__
 from .logging import config_logging
 from .s3_wrapper import run_s3_object_scan
-from .tantivy_wrapper import index_catalog, search_index_simple, run_query
-
+from .tantivy_wrapper import index_catalog, run_query, search_index_simple
 
 logger = getLogger(__name__)
 
@@ -66,7 +65,8 @@ def parse_scan_args() -> argparse.Namespace:
         "--output-root",
         type=Path,
         default=DEFAULT_OUTPUT_ROOT,
-        help=f"Output root directory for generated files (default: {DEFAULT_OUTPUT_ROOT})",
+        help="Output root directory for generated files "
+        f"(default: {DEFAULT_OUTPUT_ROOT})",
     )
     parser.add_argument(
         "--no-scan",
@@ -85,7 +85,6 @@ def parse_scan_args() -> argparse.Namespace:
         help="Logging level (default: INFO)",
     )
     return parser.parse_args()
-
 
 
 def search_aws(args: argparse.Namespace | None = None) -> None:
@@ -121,15 +120,15 @@ Examples:
 
 Output format:
   Unless --uri-only is specified, search results are returned as tab-separated values:
-  
+
   Standard columns:
     s3_uri        size        last_modified        storage_class
-  
+
   With --uri-only, only S3 URIs are printed:
     s3://bucket-name/path/to/file
-  
+
   Matching files are printed to standard output.
-"""
+""",
     )
     parser.add_argument(
         "-V",
@@ -154,7 +153,8 @@ Output format:
         "--output-root",
         type=Path,
         default=DEFAULT_OUTPUT_ROOT,
-        help=f"Output root directory containing the scan files (default: {DEFAULT_OUTPUT_ROOT})",
+        help="Output root directory containing the scan files (default: "
+        f"{DEFAULT_OUTPUT_ROOT})",
     )
     parser.add_argument(
         "-u",
@@ -178,87 +178,91 @@ def search_py(args: argparse.Namespace | None = None) -> None:
     config_logging(args.log_level)
     logger.info(f"Output root: {args.output_root}")
     logger.info(f"Input file: '{args.file}'")
-    
+
     # Read search terms from input file
     try:
-        with open(args.file, 'r') as f:
+        with open(args.file) as f:
             search_terms = [line.strip() for line in f if line.strip()]
     except FileNotFoundError:
         logger.error(f"Input file not found: {args.file}")
         exit(1)
-    except IOError as e:
+    except OSError as e:
         logger.error(f"Error reading input file: {e}")
         exit(1)
-    
+
     # Prepare output files
     input_path = Path(args.file)
     output_files = {
-        'out': input_path.with_suffix(input_path.suffix + '.out.tsv'),
-        'info': input_path.with_suffix(input_path.suffix + '.out.info'),
-        'not_found': input_path.with_suffix(input_path.suffix + '.not_found.txt'),
-        'not_found_list': input_path.with_suffix(input_path.suffix + '.not_found.list'),
+        "out": input_path.with_suffix(input_path.suffix + ".out.tsv"),
+        "info": input_path.with_suffix(input_path.suffix + ".out.info"),
+        "not_found": input_path.with_suffix(input_path.suffix + ".not_found.txt"),
+        "not_found_list": input_path.with_suffix(input_path.suffix + ".not_found.list"),
     }
-    
+
     not_found_terms = []
     total_matches = 0
-    
+
     try:
-        with open(output_files['out'], 'w') as out_file, \
-             open(output_files['info'], 'w') as info_file, \
-             open(output_files['not_found'], 'w') as not_found_file, \
-             open(output_files['not_found_list'], 'w') as not_found_list_file:
-            
+        with (
+            open(output_files["out"], "w") as out_file,
+            open(output_files["info"], "w") as info_file,
+            open(output_files["not_found"], "w") as not_found_file,
+            open(output_files["not_found_list"], "w") as not_found_list_file,
+        ):
+
             # Write headers
             info_file.write("# Search results summary\n")
             info_file.write(f"# Input file: {args.file}\n")
             info_file.write(f"# Total search terms: {len(search_terms)}\n")
-            
+
             for term in search_terms:
                 logger.info(f"Searching for: '{term}'")
                 try:
-                    results = list(run_query(
-                        args.output_root / "index",
-                        term,
-                        args.max_results_per_query
-                    ))
-                    
+                    results = list(
+                        run_query(
+                            args.output_root / "index", term, args.max_results_per_query
+                        )
+                    )
+
                     if results:
                         match_count = len(results)
                         total_matches += match_count
                         info_file.write(f"{term}\t{match_count} matches\n")
-                        
+
                         for _score, doc in results:
                             bucket_name = doc.bucket_name
                             key = doc.key
                             s3_uri = f"s3://{bucket_name}/{key}"
-                            
+
                             if args.uri_only:
                                 out_file.write(f"{s3_uri}\n")
                             else:
                                 size = doc.size
                                 last_modified = doc.last_modified
                                 storage_class = doc.storage_class
-                                out_file.write(f"{s3_uri}\t{size}\t{last_modified}\t{storage_class}\n")
+                                out_file.write(
+                                    f"{s3_uri}\t{size}\t{last_modified}\t{storage_class}\n"
+                                )
                     else:
                         not_found_terms.append(term)
                         not_found_file.write(f"{term}\t0 matches\n")
                         not_found_list_file.write(f"{term}\n")
                         info_file.write(f"{term}\t0 matches\n")
-                        
+
                 except Exception as e:
                     logger.error(f"Error searching for '{term}': {e}")
                     not_found_terms.append(term)
                     not_found_file.write(f"{term}\tError: {e}\n")
                     not_found_list_file.write(f"{term}\n")
-            
+
             # Write summary to info file
             info_file.write(f"# Total matches found: {total_matches}\n")
             info_file.write(f"# Terms with no matches: {len(not_found_terms)}\n")
-            
-    except IOError as e:
+
+    except OSError as e:
         logger.error(f"Error writing output files: {e}")
         exit(1)
-    
+
     logger.info(f"Search completed. Results written to {output_files['out']}")
     logger.info(f"Summary written to {output_files['info']}")
     if not_found_terms:
@@ -269,7 +273,8 @@ def search_py(args: argparse.Namespace | None = None) -> None:
 def parse_search_py_args() -> argparse.Namespace:
     "Parse command line arguments for search.py."
     parser = argparse.ArgumentParser(
-        description="Search index of keys in AWS S3 buckets using input file with search terms.",
+        description="Search index of keys in AWS S3 buckets using input file "
+        "with search terms.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -285,15 +290,15 @@ Output files:
 
 Output format:
   Unless --uri-only is specified, FILE.out.tsv contains tab-separated values:
-  
+
   Standard columns:
     s3_uri        size        last_modified        storage_class
-  
+
   With --uri-only, FILE.out.tsv contains only S3 URIs:
     s3://bucket-name/path/to/file
-  
+
   Note: FILE is the path of input file as provided by the user.
-"""
+""",
     )
     parser.add_argument(
         "-V",
@@ -311,7 +316,8 @@ Output format:
         "-f",
         "--file",
         dest="file_alt",
-        help="Input file (for backwards compatibility - use positional argument instead)",
+        help="Input file (for backwards compatibility - "
+        "use positional argument instead)",
     )
     parser.add_argument(
         "-m",
@@ -325,7 +331,8 @@ Output format:
         "--output-root",
         type=Path,
         default=DEFAULT_OUTPUT_ROOT,
-        help=f"Output root directory containing the scan files (default: {DEFAULT_OUTPUT_ROOT})",
+        help="Output root directory containing the scan files "
+        f"(default: {DEFAULT_OUTPUT_ROOT})",
     )
     parser.add_argument(
         "-u",
@@ -340,13 +347,16 @@ Output format:
         help="Logging level (default: WARNING)",
     )
     args = parser.parse_args()
-    
-    # Handle backwards compatibility: use -f/--file if provided, otherwise use positional
+
+    # Handle backwards compatibility: use -f/--file if provided,
+    # otherwise use positional
     if args.file_alt:
         args.file = args.file_alt
-    
+
     # Ensure we have a file specified
     if not args.file:
-        parser.error("Input file is required (either as positional argument or with -f/--file)")
-    
+        parser.error(
+            "Input file is required (either as positional argument or with -f/--file)"
+        )
+
     return args

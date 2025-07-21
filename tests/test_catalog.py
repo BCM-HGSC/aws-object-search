@@ -71,7 +71,7 @@ def test_current_bucket_scans(simple_catalog):
 def test_current_contents(resources_dir, simple_catalog):
     "Test main output of catalog used for indexing."
     current_contents_tsv = resources_dir / "current_contents.tsv"
-    with open(current_contents_tsv, "rt", newline="", encoding="utf-8") as tsv_file:
+    with open(current_contents_tsv, newline="", encoding="utf-8") as tsv_file:
         reader = csv.reader(tsv_file, delimiter="\t")
         expected = list(reader)
     computed = []
@@ -94,29 +94,29 @@ def test_iter_dicts(simple_catalog):
     results = list(simple_catalog.iter_dicts())
     assert len(results) == 12
     first, *_, last = results
-    assert first == dict(
-        scan_start="2025-05-04T16:48:32",
-        bucket_name="hgsc-a-1-2-3",
-        last_modified="2025-03-31T01:37:05+00:00",
-        size="6325709904",
-        storage_class="DEEP_ARCHIVE",
-        e_tag="a65f5b56909bf63398213ae450a879fb-604",
-        checksum_algorithm="SHA256",
-        checksum_type="COMPOSITE",
-        key="v1/illumina/wex/fastqs/Sample_HY2L7DSX2-3-IDUDI0074/"
+    assert first == {
+        "scan_start": "2025-05-04T16:48:32",
+        "bucket_name": "hgsc-a-1-2-3",
+        "last_modified": "2025-03-31T01:37:05+00:00",
+        "size": "6325709904",
+        "storage_class": "DEEP_ARCHIVE",
+        "e_tag": "a65f5b56909bf63398213ae450a879fb-604",
+        "checksum_algorithm": "SHA256",
+        "checksum_type": "COMPOSITE",
+        "key": "v1/illumina/wex/fastqs/Sample_HY2L7DSX2-3-IDUDI0074/"
         "HY2L7DSX2-3-IDUDI0074_S120_L003_R1_001.fastq.gz",
-    )
-    assert last == dict(
-        scan_start="2025-05-05T16:48:32",
-        bucket_name="hgsc-b123",
-        last_modified="2025-03-31T01:39:09+00:00",
-        size="2271",
-        storage_class="DEEP_ARCHIVE",
-        e_tag="8762b27bbeee8c644b19ce7dac46c5c2",
-        checksum_algorithm="SHA256",
-        checksum_type="FULL_OBJECT",
-        key="v1/illumina/wex/fastqs/Sample_HY2L7DSX2-3-IDUDI0076/event.json",
-    )
+    }
+    assert last == {
+        "scan_start": "2025-05-05T16:48:32",
+        "bucket_name": "hgsc-b123",
+        "last_modified": "2025-03-31T01:39:09+00:00",
+        "size": "2271",
+        "storage_class": "DEEP_ARCHIVE",
+        "e_tag": "8762b27bbeee8c644b19ce7dac46c5c2",
+        "checksum_algorithm": "SHA256",
+        "checksum_type": "FULL_OBJECT",
+        "key": "v1/illumina/wex/fastqs/Sample_HY2L7DSX2-3-IDUDI0076/event.json",
+    }
 
 
 @fixture
@@ -152,26 +152,26 @@ def test_gzipped_catalog(temp_gzipped_catalog) -> None:
     results = list(temp_gzipped_catalog.iter_dicts())
     assert len(results) == 12
     first, *_, last = results
-    assert first == dict(
-        scan_start="2025-05-04T16:48:32",
-        bucket_name="hgsc-a-1-2-3",
-        last_modified="2025-03-31T01:37:05+00:00",
-        size="6325709904",
-        storage_class="DEEP_ARCHIVE",
-        e_tag="a65f5b56909bf63398213ae450a879fb-604",
-        checksum_algorithm="SHA256",
-        checksum_type="COMPOSITE",
-        key="v1/illumina/wex/fastqs/Sample_HY2L7DSX2-3-IDUDI0074/"
+    assert first == {
+        "scan_start": "2025-05-04T16:48:32",
+        "bucket_name": "hgsc-a-1-2-3",
+        "last_modified": "2025-03-31T01:37:05+00:00",
+        "size": "6325709904",
+        "storage_class": "DEEP_ARCHIVE",
+        "e_tag": "a65f5b56909bf63398213ae450a879fb-604",
+        "checksum_algorithm": "SHA256",
+        "checksum_type": "COMPOSITE",
+        "key": "v1/illumina/wex/fastqs/Sample_HY2L7DSX2-3-IDUDI0074/"
         "HY2L7DSX2-3-IDUDI0074_S120_L003_R1_001.fastq.gz",
-    )
-    assert last == dict(
-        scan_start="2025-05-05T16:48:32",
-        bucket_name="hgsc-b123",
-        last_modified="2025-03-31T01:39:09+00:00",
-        size="2271",
-        storage_class="DEEP_ARCHIVE",
-        e_tag="8762b27bbeee8c644b19ce7dac46c5c2",
-        checksum_algorithm="SHA256",
-        checksum_type="FULL_OBJECT",
-        key="v1/illumina/wex/fastqs/Sample_HY2L7DSX2-3-IDUDI0076/event.json",
-    )
+    }
+    assert last == {
+        "scan_start": "2025-05-05T16:48:32",
+        "bucket_name": "hgsc-b123",
+        "last_modified": "2025-03-31T01:39:09+00:00",
+        "size": "2271",
+        "storage_class": "DEEP_ARCHIVE",
+        "e_tag": "8762b27bbeee8c644b19ce7dac46c5c2",
+        "checksum_algorithm": "SHA256",
+        "checksum_type": "FULL_OBJECT",
+        "key": "v1/illumina/wex/fastqs/Sample_HY2L7DSX2-3-IDUDI0076/event.json",
+    }

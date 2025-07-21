@@ -4,13 +4,13 @@ Local catalog of the contents of cloud objects (S3/glacier).
 
 import csv
 import gzip
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from logging import getLogger
 from operator import attrgetter
 from pathlib import Path
-from typing import Any, Iterable
-
+from typing import Any
 
 logger = getLogger(__name__)
 OBJ_KEY_MAP = {
@@ -74,9 +74,9 @@ class BucketScan:
 
     def flattened_dict(self) -> dict[str, str]:
         "Fatten to str-based dict"
-        return dict(
-            scan_start=self.scan_start.isoformat(), bucket_name=self.bucket_name
-        )
+        return {
+            "scan_start": self.scan_start.isoformat(), "bucket_name": self.bucket_name
+        }
 
 
 class S3ObjectCatalog:
@@ -89,7 +89,7 @@ class S3ObjectCatalog:
         Initialize the S3ObjectCatalog with an optional parent directory.
         :param catalog_root: Parent directory for output files
         """
-        assert isinstance(catalog_root, (str, Path)), catalog_root
+        assert isinstance(catalog_root, str | Path), catalog_root
         if not catalog_root:
             raise ValueError("catalog_root connot be empty string")
         self.catalog_root = Path(catalog_root).resolve()
@@ -172,7 +172,7 @@ class S3ObjectCatalog:
         Ensure the parent directory of the TSV file exists.
         :param tsv_file_path: Path to the TSV file
         """
-        assert isinstance(tsv_file_path, (str, Path))
+        assert isinstance(tsv_file_path, str | Path)
         assert tsv_file_path
         catalog_root = Path(tsv_file_path).parent.resolve()
         if not catalog_root.exists():
