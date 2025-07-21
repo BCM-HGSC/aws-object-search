@@ -29,52 +29,38 @@ class S3ObjectResult:
     key: str = "MISSING"
 
 
-def search_index(index_path: Path | str, query: str) -> None:
-    "Search for query."
-    for score, doc in run_query(index_path, query):
-        bucket_name = doc.bucket_name
-        key = doc.key
-        print(f"{score:06.2f}", bucket_name, key, sep="\t")
-
 
 def search_index_simple(
     index_path: Path | str,
     query: str,
-    latest: bool = False,
+    uri_only: bool = False,
+    max_results: int = 1000,
 ) -> None:
     "Search for query with simple output format for search-aws."
-    results = list(run_query(index_path, query))
-
-    if latest:
-        # Group by key and select most recent (highest score)
-        key_groups = {}
-        for score, doc in results:
-            key = doc.key
-            if key not in key_groups or score > key_groups[key]:
-                key_groups[key] = (score, doc)
-        results = list(key_groups.values())
+    results = list(run_query(index_path, query, max_results))
 
     for _score, doc in results:
         bucket_name = doc.bucket_name
         key = doc.key
         s3_uri = f"s3://{bucket_name}/{key}"
-        size = doc.size
-        last_modified = doc.last_modified
-        storage_class = doc.storage_class
-
-        print(f"{s3_uri}\t{size}\t{last_modified}\t{storage_class}")
+        if uri_only:
+            print(s3_uri)
+        else:
+            size = doc.size
+            last_modified = doc.last_modified
+            storage_class = doc.storage_class
+            print(f"{s3_uri}\t{size}\t{last_modified}\t{storage_class}")
 
 
 def run_query(
-    index_path: Path | str, query_str: str
+    index_path: Path | str, query_str: str, max_results: int = 1000
 ) -> Iterable[tuple[float, S3ObjectResult]]:
     "Search for query and generate (score, S3ObjectResult) pairs."
     schema = build_schema()
     index = tantivy.Index(schema, str(index_path))
     query_obj = index.parse_query(query_str, ["key"])
     searcher = index.searcher()
-    # TODO: page results beyond 1000
-    results = searcher.search(query_obj, 1000)
+    results = searcher.search(query_obj, max_results)
 
     for score, address in results.hits:
         doc = searcher.doc(address)
@@ -82,7 +68,7 @@ def run_query(
 
         # Create S3ObjectResult with default values
         result = S3ObjectResult()
-        
+
         # Update fields from document
         for field in result.__dataclass_fields__:
             if field in doc_dict:

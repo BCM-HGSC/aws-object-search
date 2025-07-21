@@ -54,4 +54,4 @@ This is an example for a "dev" deployment that scans all buckets that start with
 In production:
 
 - cron jobs should invoke `aos-scan` by absolute path.
-- The software should be deployed so that no activation is required for users to run `aos-search`.
+- The software should be deployed so that no activation is required for users to run `search-aws` or `search.py`.
