@@ -24,13 +24,13 @@ aws sso login
 ### Testing
 ```bash
 # Run all tests
-./env/bin/pytest
+./bin/pytest
 
 # Run specific test file
-./env/bin/pytest tests/test_catalog.py
+./bin/pytest tests/test_catalog.py
 
 # Run integration tests (marked with @pytest.mark.integration)
-./env/bin/pytest -m integration
+./bin/pytest -m integration
 ```
 
 ### Updates in Development
