@@ -221,3 +221,43 @@ def test_run_query_with_missing_fields(tmp_path):
     # Missing fields should have default values
     assert result.size == "MISSING"
     assert result.storage_class == "MISSING"
+
+
+def test_managed_json_permissions(tmp_path):
+    """Test that .managed.json file has proper read permissions after index creation."""
+    import stat
+
+    # Create an index
+    sample_documents = [
+        {
+            "bucket_name": "test-bucket",
+            "key": "test/file.txt",
+            "size": "1024",
+            "storage_class": "STANDARD",
+        }
+    ]
+
+    regenerate_index(tmp_path, sample_documents)
+
+    # Check that .managed.json exists and has proper permissions
+    managed_json_path = tmp_path / ".managed.json"
+    assert managed_json_path.exists(), ".managed.json should exist after index creation"
+
+    # Get file permissions
+    file_stat = managed_json_path.stat()
+    file_permissions = stat.filemode(file_stat.st_mode)
+
+    # Check that the file is readable by all (at least r--r--r--)
+    readable_by_owner = file_stat.st_mode & stat.S_IRUSR
+    readable_by_group = file_stat.st_mode & stat.S_IRGRP
+    readable_by_other = file_stat.st_mode & stat.S_IROTH
+
+    assert readable_by_owner, (
+        f".managed.json should be readable by owner, got: {file_permissions}"
+    )
+    assert readable_by_group, (
+        f".managed.json should be readable by group, got: {file_permissions}"
+    )
+    assert readable_by_other, (
+        f".managed.json should be readable by others, got: {file_permissions}"
+    )
