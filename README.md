@@ -3,12 +3,71 @@
 This repo is a collection of tools to facilitate searching the contents of a
 collection of S3 buckets.
 
+## Development Setup
+
+### Prerequisites
+
+**SSH keys are recommended** for GitHub access. Everything gets easier with SSH authentication. If you refuse to use SSH, you will need a personal access token for the HTTPS URL.
+
+For AWS operations, ensure you have:
+```bash
+export AWS_PROFILE=scan-dev  # or appropriate profile
+aws sso login
+```
+
+### Deployment
+
+Deploy the software for development:
+```bash
+./deploy
+```
+
+This creates an `aws-object-search-dev` directory with the development environment and all dependencies already installed.
+
+For production deployments with a specific version:
+```bash
+VERSION=1.0.0
+git checkout v"$VERSION"
+./deploy "$VERSION"  # defaults to "dev" if not set
+```
+
+The `deploy` script ignores your home directory contents and most environment variables through the `scripts/sanitize-command` script.
+
+## Testing
+
+```bash
+# Run all tests
+./bin/pytest
+
+# Run specific test file
+./bin/pytest tests/test_catalog.py
+
+# Run integration tests (marked with @pytest.mark.integration)
+./bin/pytest -m integration
+```
+
 ## Tools
 
-- `search.py`: 
-- `search-aws`: 
-- `aos-scan`: scans all buckets or those with a specified prefix to TSV files
-- `python3 bin/searchGlacier.py`: brute-force `O(N)` metadata search of all objects within readable or specified buckets. This script is mainly for reference and should not normally be used. Unless the buckets to be searched are limited, a single search could take several minutes.
+- `search.py`: Main search interface that reads a text file containing search terms and generates output files
+- `search-aws`: Command-line search tool that accepts a single search term and outputs to stdout
+- `aos-scan`: Scans S3 buckets (all or with specified prefix) and generates TSV catalog files, then creates search index
+- `python3 bin/searchGlacier.py`: Legacy brute-force `O(N)` metadata search of all objects within readable or specified buckets. This script is mainly for reference and should not normally be used. Unless the buckets to be searched are limited, a single search could take several minutes.
+
+### Running Tools in Development
+
+There is a `bin/` directory in the project root with symlinks to executables:
+
+```bash
+# Scan S3 buckets with prefix
+bin/aos-scan --bucket-prefix hgsc-b
+
+# Search the index
+bin/search-aws "search_term"
+bin/search.py input_file.txt
+
+# Code quality validation
+bin/ruff check PATH/TO/FILE
+```
 
 ## Technical Architecture
 
@@ -23,7 +82,6 @@ The idea is to create text files that are catalogs of the archive, load those te
 - searcher
     - search.py
     - search-aws
-    - aos-search
 
 ## execution overview
 
@@ -68,9 +126,7 @@ You must specify which database to use or it defaults to the Production one.
 
 `-f/--file FILE`: Input file (`-f` is optional but `FILE` is not.)
 
-`-l/--latest`: This will select the most recent matches for each input line
-
-`-m/--max-results-per-query MAX_RESULTS_PER_QUERY`: **NOT IMPLEMENTED**. Maximum results per query. (Default is 10,000,000. No need to set this.)
+`-m/--max-results-per-query MAX_RESULTS_PER_QUERY`: Maximum results per query. (Default is 10,000,000. No need to set this.)
 
 `-u/--uri-only`: Suppress all output in the primary file (FILE.out.tsv) except for the S3 URIs.
 
@@ -104,9 +160,9 @@ The search-aws script uses provided string to search the archive databases. You 
 
 `-V/--version`: Print the version and exit
 
-`-l/--latest`: This will select the most recent matches for each input line
+`-m/--max-results-per-query MAX_RESULTS_PER_QUERY`: Maximum results per query. (Default is 10,000,000. No need to set this.)
 
-`-m/--max-results-per-query MAX_RESULTS_PER_QUERY`: **NOT IMPLEMENTED**. Maximum results per query. (Default is 10,000,000. No need to set this.)
+`-u/--uri-only`: Suppress all output in the primary file (FILE.out.tsv) except for the S3 URIs.
 
 #### Example:
 
@@ -142,8 +198,10 @@ The SysAdmin team must:
 - maintain the credentials (secrets) in a protected location `(drwx------)`
 - maintain the cron job that
     - loads the secrets into the environment
-    - runs the scanner and indexer
+    - runs the scanner and indexer (cron jobs should invoke `aos-scan` by absolute path)
 - maintain `/etc/profile.d/asearch.sh`
+
+The software should be deployed so that no activation is required for users to run `search-aws` or `search.py`.
 
 #### production configuration
 

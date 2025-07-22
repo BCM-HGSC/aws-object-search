@@ -24,13 +24,13 @@ aws sso login
 ### Testing
 ```bash
 # Run all tests
-./env/bin/pytest
+./bin/pytest
 
 # Run specific test file
-./env/bin/pytest tests/test_catalog.py
+./bin/pytest tests/test_catalog.py
 
 # Run integration tests (marked with @pytest.mark.integration)
-./env/bin/pytest -m integration
+./bin/pytest -m integration
 ```
 
 ### Updates in Development
@@ -51,12 +51,11 @@ There is a `bin` in the project root with symlinks to executables in `env/bin/`.
 bin/aos-scan --bucket-prefix hgsc-b
 
 # Search the index
-bin/aos-search s3_objects "search query"
-
-# Search the index
 bin/search-aws
 bin/search.py
 
+# Using ruff to check PATH/TO/FILE
+bin/ruff check PATH/TO/FILE
 
 # Legacy brute-force search (should never need to run)
 python bin/searchGlacier.py
@@ -74,19 +73,19 @@ This is an S3 object search system with two main phases:
 - **Catalog Management** (`catalog.py`): Handles TSV file operations and metadata
 - **Indexer** (`tantivy_wrapper.py`): Ingests TSV catalog files into a Tantivy search index
 
-### Phase 2: Searching (`aos-search`)
+### Phase 2: Searching (`search-aws`, `search.py`)
 - **Search Interface** (`tantivy_wrapper.py`): Queries the Tantivy index
 
 ### Key Components
 - `src/aws_object_search/s3_wrapper.py`: AWS S3 interaction, bucket scanning
 - `src/aws_object_search/tantivy_wrapper.py`: Search index creation and querying
 - `src/aws_object_search/catalog.py`: TSV catalog file management
-- `src/aws_object_search/entry.py`: CLI entry points (aos-scan, aos-search)
+- `src/aws_object_search/entry.py`: CLI entry points (aos-scan, search-aws, search.py)
 
 ### Data Flow
 1. `aos-scan` reads S3 buckets → generates TSV files in `s3_objects/`
 2. Indexer processes TSV files → creates search index in `s3_objects/index/`
-3. `aos-search` queries the index for fast search results
+3. `search-aws` and `search.py` query the index for fast search results
 
 ### Deployment Structure
 Production uses versioned deployments via the `deploy` script:
@@ -94,3 +93,11 @@ Production uses versioned deployments via the `deploy` script:
 - Installs package with uv
 - Creates `s3_objects/` output directory
 - In production: symlinked as `current` for stable path reference
+
+## Code Quality and Validation
+
+- Always run ruff to validate new code.
+
+## File Handling Guidelines
+
+- Files should always end with a newline unless the target file format forbids it.

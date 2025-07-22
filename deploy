@@ -146,11 +146,13 @@ deploy() {
     export PATH="$TARGET_ENV"/bin:$PATH
     if [[ $SUFFIX == "dev" ]]; then
         EDITABLE="-e"
+        REQUIREMENT="$REPO_DIR[dev]"
     else
         EDITABLE=""
+        REQUIREMENT="$REPO_DIR"
     fi
-    echo uv pip install --system $EDITABLE "$REPO_DIR"
-    uv pip install --system $EDITABLE "$REPO_DIR"
+    echo uv pip install --system $EDITABLE "$REQUIREMENT"
+    uv pip install --system $EDITABLE "$REQUIREMENT"
     # Phase 4: create output directory.
     mkdir -p s3_objects
 }

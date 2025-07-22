@@ -1,11 +1,10 @@
+from collections.abc import Generator
 from logging import getLogger
 from pathlib import Path
-from typing import Generator
 
 import boto3
 
 from .catalog import S3ObjectCatalog
-
 
 logger = getLogger(__name__)
 
@@ -23,11 +22,11 @@ def run_s3_object_scan(
     :param tsv_file_prefix: Optional value to use instead of timestamp in TSV file names
     :param s3_client: Optional Boto3 S3 client
     """
-    if not isinstance(output_root, (str, Path)):
+    if not isinstance(output_root, str | Path):
         raise TypeError(
             f"Output root directory {output_root!r} must be a string or Path or None"
         )
-    if not isinstance(bucket_prefix, (str, type(None))):
+    if not isinstance(bucket_prefix, str | type(None)):
         raise TypeError("Bucket prefix must be a string or None")
 
     scanner = BucketScanner(s3_client)
@@ -59,7 +58,7 @@ class BucketScanner:
         :param prefix: Optional prefix to filter bucket names
         :return: List of bucket names
         """
-        if not isinstance(prefix, (str, type(None))):
+        if not isinstance(prefix, str | type(None)):
             raise TypeError("Prefix must be a string or None")
         kwargs = {"Prefix": prefix} if prefix else {}
         response = self.s3_client.list_buckets(**kwargs)
@@ -79,5 +78,4 @@ class BucketScanner:
         paginator = self.s3_client.get_paginator("list_objects_v2")
         page_iterable = paginator.paginate(Bucket=bucket_name)
         for page in page_iterable:
-            for obj in page.get("Contents", []):
-                yield obj
+            yield from page.get("Contents", [])

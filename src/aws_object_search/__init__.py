@@ -1,1 +1,3 @@
-__version__ = "1.0.0-beta2+dev"
+import importlib.metadata
+
+__version__ = importlib.metadata.version("aws-object-search")
