@@ -1,7 +1,7 @@
 [project]
 name = "aws-object-search"
+version = "1.0.0-beta2+dev"
 description = "Tools for searching the contents of S3 buckets"
-dynamic = ["version"]
 authors = [
     { name = "Mingxuan Guan", email = "mingxuan.guan@bcm.edu" },
     { name = "Walker Hale", email = "hale@bcm.edu" },
@@ -37,8 +37,6 @@ where = ["src"]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.dynamic]
-version = { attr = "aws_object_search.__init__.__version__" }
 
 [tool.pytest.ini_options]
 filterwarnings = [
