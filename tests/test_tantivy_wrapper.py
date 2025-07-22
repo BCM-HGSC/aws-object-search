@@ -261,3 +261,48 @@ def test_managed_json_permissions(tmp_path):
     assert readable_by_other, (
         f".managed.json should be readable by others, got: {file_permissions}"
     )
+
+
+def test_tantivy_meta_lock_permissions(tmp_path):
+    """Test that .tantivy-meta.lock file has proper write permissions."""
+    import stat
+
+    import tantivy
+
+    # Create an index
+    sample_documents = [
+        {
+            "bucket_name": "test-bucket",
+            "key": "test/file.txt",
+            "size": "1024",
+            "storage_class": "STANDARD",
+        }
+    ]
+
+    regenerate_index(tmp_path, sample_documents)
+
+    # Create a searcher to trigger meta lock file creation
+    schema = build_schema()
+    index = tantivy.Index(schema, str(tmp_path))
+    index.searcher()  # Create searcher to trigger lock file creation
+
+    # Check that .tantivy-meta.lock exists and has proper permissions
+    meta_lock_path = tmp_path / ".tantivy-meta.lock"
+    if meta_lock_path.exists():
+        file_stat = meta_lock_path.stat()
+        file_permissions = stat.filemode(file_stat.st_mode)
+
+        # Check that the file is writable by all (rw-rw-rw-)
+        writable_by_owner = file_stat.st_mode & stat.S_IWUSR
+        writable_by_group = file_stat.st_mode & stat.S_IWGRP
+        writable_by_other = file_stat.st_mode & stat.S_IWOTH
+
+        assert writable_by_owner, (
+            f".tantivy-meta.lock should be writable by owner, got: {file_permissions}"
+        )
+        assert writable_by_group, (
+            f".tantivy-meta.lock should be writable by group, got: {file_permissions}"
+        )
+        assert writable_by_other, (
+            f".tantivy-meta.lock writable by others, got: {file_permissions}"
+        )

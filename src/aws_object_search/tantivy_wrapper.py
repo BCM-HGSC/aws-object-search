@@ -87,8 +87,6 @@ def index_catalog(catalog_root: Path, index_path: Path) -> None:
 
 def regenerate_index(index_path: Path, documents: Iterable[dict[str, str]]) -> None:
     "Populate a new index, replacing any existing index."
-    import os
-
     # TODO: avoid external race condition.
     schema = build_schema()
     if index_path.is_dir():
@@ -100,11 +98,25 @@ def regenerate_index(index_path: Path, documents: Iterable[dict[str, str]]) -> N
     writer.commit()
     writer.wait_merging_threads()
 
-    # Fix permissions for .managed.json file after writer operations
+    # Fix permissions for tantivy files after writer operations
+    _fix_tantivy_permissions(index_path)
+
+
+def _fix_tantivy_permissions(index_path: Path) -> None:
+    "Fix permissions for tantivy files to prevent permission denied errors."
+    import os
+
+    # Fix permissions for .managed.json file
     managed_json_path = index_path / ".managed.json"
     if managed_json_path.exists():
         # Set permissions to 644 (rw-r--r--)
         os.chmod(managed_json_path, 0o644)
+
+    # Fix permissions for .tantivy-meta.lock file
+    meta_lock_path = index_path / ".tantivy-meta.lock"
+    if meta_lock_path.exists():
+        # Set permissions to 666 (rw-rw-rw-) for meta lock file
+        os.chmod(meta_lock_path, 0o666)
 
 
 def build_schema() -> tantivy.Schema:
@@ -125,15 +137,10 @@ def build_schema() -> tantivy.Schema:
 
 def create_index(schema: tantivy.Schema, index_path: Path) -> tantivy.Index:
     "Create a Tantivy index at the specified path."
-    import os
-
     index_path.mkdir(exist_ok=True)
     index = tantivy.Index(schema, path=str(index_path))
 
-    # Fix permissions for .managed.json file to be readable by all
-    managed_json_path = index_path / ".managed.json"
-    if managed_json_path.exists():
-        # Set permissions to 644 (rw-r--r--)
-        os.chmod(managed_json_path, 0o644)
+    # Fix permissions for tantivy files after index creation
+    _fix_tantivy_permissions(index_path)
 
     return index
