@@ -112,6 +112,12 @@ def _fix_tantivy_permissions(index_path: Path) -> None:
         # Set permissions to 644 (rw-r--r--)
         os.chmod(managed_json_path, 0o644)
 
+    # Fix permissions for meta.json file
+    meta_json_path = index_path / "meta.json"
+    if meta_json_path.exists():
+        # Set permissions to 644 (rw-r--r--) for read access by all
+        os.chmod(meta_json_path, 0o644)
+
     # Fix permissions for .tantivy-meta.lock file
     meta_lock_path = index_path / ".tantivy-meta.lock"
     if meta_lock_path.exists():
