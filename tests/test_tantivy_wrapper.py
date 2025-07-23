@@ -306,3 +306,43 @@ def test_tantivy_meta_lock_permissions(tmp_path):
         assert writable_by_other, (
             f".tantivy-meta.lock writable by others, got: {file_permissions}"
         )
+
+
+def test_meta_json_permissions(tmp_path):
+    """Test that meta.json file has proper read permissions after index creation."""
+    import stat
+
+    # Create an index
+    sample_documents = [
+        {
+            "bucket_name": "test-bucket",
+            "key": "test/file.txt",
+            "size": "1024",
+            "storage_class": "STANDARD",
+        }
+    ]
+
+    regenerate_index(tmp_path, sample_documents)
+
+    # Check that meta.json exists and has proper permissions
+    meta_json_path = tmp_path / "meta.json"
+    assert meta_json_path.exists(), "meta.json should exist after index creation"
+
+    # Get file permissions
+    file_stat = meta_json_path.stat()
+    file_permissions = stat.filemode(file_stat.st_mode)
+
+    # Check that the file is readable by all (at least r--r--r--)
+    readable_by_owner = file_stat.st_mode & stat.S_IRUSR
+    readable_by_group = file_stat.st_mode & stat.S_IRGRP
+    readable_by_other = file_stat.st_mode & stat.S_IROTH
+
+    assert readable_by_owner, (
+        f"meta.json should be readable by owner, got: {file_permissions}"
+    )
+    assert readable_by_group, (
+        f"meta.json should be readable by group, got: {file_permissions}"
+    )
+    assert readable_by_other, (
+        f"meta.json should be readable by others, got: {file_permissions}"
+    )
