@@ -58,83 +58,6 @@ CRAM_INDEX_ENDINGS = ["cram.crai"]
 VCF_INDEX_ENDINGS = ["vcf.gz.tbi"]
 
 
-def build_file_endings_filter(args: argparse.Namespace) -> list[str] | None:
-    """
-    Build list of allowed file endings based on command-line args.
-    Returns None if no filtering should be applied (--all flag).
-    Returns list of endings for filtering by default or with specific flags.
-    """
-    # --all overrides everything
-    if args.all:
-        return None
-
-    selected_endings = []
-
-    # If no type flags specified, use default (equivalent to -gprv)
-    no_flags_specified = not any(
-        [
-            args.raw_reads,
-            args.mapped_reads,
-            args.bam,
-            args.cram,
-            args.vcf,
-            args.configs,
-        ]
-    )
-
-    # Handle --raw-reads or default
-    if args.raw_reads or no_flags_specified:
-        selected_endings.extend(RAW_READS_ENDINGS)
-
-    # Handle --configs or default
-    if args.configs or no_flags_specified:
-        selected_endings.extend(CONFIG_ENDINGS)
-
-    # Handle --mapped-reads (includes both BAM and CRAM)
-    if args.mapped_reads or no_flags_specified:
-        selected_endings.extend(BAM_ENDINGS)
-        selected_endings.extend(CRAM_ENDINGS)
-        if not args.no_index:
-            selected_endings.extend(BAM_INDEX_ENDINGS)
-            selected_endings.extend(CRAM_INDEX_ENDINGS)
-    else:
-        # Handle individual --bam flag
-        if args.bam:
-            selected_endings.extend(BAM_ENDINGS)
-            if not args.no_index:
-                selected_endings.extend(BAM_INDEX_ENDINGS)
-
-        # Handle individual --cram flag
-        if args.cram:
-            selected_endings.extend(CRAM_ENDINGS)
-            if not args.no_index:
-                selected_endings.extend(CRAM_INDEX_ENDINGS)
-
-    # Handle --vcf or default
-    if args.vcf or no_flags_specified:
-        selected_endings.extend(VCF_ENDINGS)
-        if not args.no_index:
-            selected_endings.extend(VCF_INDEX_ENDINGS)
-
-    return selected_endings if selected_endings else None
-
-
-def filter_by_file_endings(uri: str, endings: list[str] | None) -> bool:
-    """
-    Check if URI ends with one of the allowed endings.
-    If endings is None, all URIs pass through (no filtering).
-    Returns True if URI should be included in results.
-    """
-    if endings is None:
-        return True
-
-    for ending in endings:
-        if uri.endswith(ending):
-            return True
-
-    return False
-
-
 def aos_scan(args: argparse.Namespace | None = None) -> None:
     "Run a scan of S3 buckets and output their objects to TSV files."
     if args is None:
@@ -614,3 +537,83 @@ Output format:
         )
 
     return args
+
+
+# Helper functions for file type filtering
+
+
+def build_file_endings_filter(args: argparse.Namespace) -> list[str] | None:
+    """
+    Build list of allowed file endings based on command-line args.
+    Returns None if no filtering should be applied (--all flag).
+    Returns list of endings for filtering by default or with specific flags.
+    """
+    # --all overrides everything
+    if args.all:
+        return None
+
+    selected_endings = []
+
+    # If no type flags specified, use default (equivalent to -gprv)
+    no_flags_specified = not any(
+        [
+            args.raw_reads,
+            args.mapped_reads,
+            args.bam,
+            args.cram,
+            args.vcf,
+            args.configs,
+        ]
+    )
+
+    # Handle --raw-reads or default
+    if args.raw_reads or no_flags_specified:
+        selected_endings.extend(RAW_READS_ENDINGS)
+
+    # Handle --configs or default
+    if args.configs or no_flags_specified:
+        selected_endings.extend(CONFIG_ENDINGS)
+
+    # Handle --mapped-reads (includes both BAM and CRAM)
+    if args.mapped_reads or no_flags_specified:
+        selected_endings.extend(BAM_ENDINGS)
+        selected_endings.extend(CRAM_ENDINGS)
+        if not args.no_index:
+            selected_endings.extend(BAM_INDEX_ENDINGS)
+            selected_endings.extend(CRAM_INDEX_ENDINGS)
+    else:
+        # Handle individual --bam flag
+        if args.bam:
+            selected_endings.extend(BAM_ENDINGS)
+            if not args.no_index:
+                selected_endings.extend(BAM_INDEX_ENDINGS)
+
+        # Handle individual --cram flag
+        if args.cram:
+            selected_endings.extend(CRAM_ENDINGS)
+            if not args.no_index:
+                selected_endings.extend(CRAM_INDEX_ENDINGS)
+
+    # Handle --vcf or default
+    if args.vcf or no_flags_specified:
+        selected_endings.extend(VCF_ENDINGS)
+        if not args.no_index:
+            selected_endings.extend(VCF_INDEX_ENDINGS)
+
+    return selected_endings if selected_endings else None
+
+
+def filter_by_file_endings(uri: str, endings: list[str] | None) -> bool:
+    """
+    Check if URI ends with one of the allowed endings.
+    If endings is None, all URIs pass through (no filtering).
+    Returns True if URI should be included in results.
+    """
+    if endings is None:
+        return True
+
+    for ending in endings:
+        if uri.endswith(ending):
+            return True
+
+    return False
