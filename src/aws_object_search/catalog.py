@@ -120,6 +120,13 @@ class S3ObjectCatalog:
             most_recent_scans.values(), key=attrgetter("scan_start", "bucket_name")
         )
 
+    def all_bucket_scans(self) -> Iterable[BucketScan]:
+        """Yield all scans in catalog, .tsv files before .tsv.gz files."""
+        patterns = ["????????-??????-*.tsv", "????????-??????-*.tsv.gz"]
+        for pattern in patterns:
+            for file_path in self.catalog_root.glob(pattern):
+                yield BucketScan(file_path)
+
     def archive_old_scans(self) -> None:
         """
         Move old (non-current) scan files to archive directory organized by date.
@@ -147,14 +154,12 @@ class S3ObjectCatalog:
             # Move file to archive
             destination = archive_dir / scan.file_path.name
             logger.info(f"Archiving {scan.file_path.name} to {archive_dir}")
-            scan.file_path.rename(destination)
-
-    def all_bucket_scans(self) -> Iterable[BucketScan]:
-        """Yield all scans in catalog, .tsv files before .tsv.gz files."""
-        patterns = ["????????-??????-*.tsv", "????????-??????-*.tsv.gz"]
-        for pattern in patterns:
-            for file_path in self.catalog_root.glob(pattern):
-                yield BucketScan(file_path)
+            try:
+                scan.file_path.rename(destination)
+            except FileExistsError:
+                logger.warning(f"Destination already exists, skipping: {destination}")
+            except OSError as e:
+                logger.error(f"Failed to archive {scan.file_path.name}: {e}")
 
     def output_s3_objects_to_tsv(
         self,
