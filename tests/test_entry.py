@@ -24,6 +24,8 @@ def test_aos_scan_smoke(tmp_path):
         bucket_prefix="test-bucket-prefix",
         output_root=tmp_path,
         log_level="ERROR",
+        no_scan=False,
+        no_index=False,
     )
     aos_scan(args)
 
