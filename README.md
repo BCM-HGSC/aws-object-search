@@ -130,6 +130,26 @@ You must specify which database to use or it defaults to the Production one.
 
 `-u/--uri-only`: Suppress all output in the primary file (FILE.out.tsv) except for the S3 URIs.
 
+##### File Type Filtering Options
+
+By default, results are filtered to show only files relevant to project managers (equivalent to `-gprv`). Use these flags to customize filtering:
+
+`-a/--all`: Show all results without filtering
+
+`-r/--raw-reads`: Include raw read files (FASTQ)
+
+`-p/--mapped-reads`: Include mapped read files (BAM and CRAM with indexes)
+
+`-b/--bam`: Include BAM files and their indexes
+
+`-c/--cram`: Include CRAM files and their indexes
+
+`-v/--vcf`: Include VCF files and their indexes
+
+`-g/--configs`: Include configuration files
+
+`-n/--no-index`: Exclude index files (.bai, .crai, .tbi) when used with other flags
+
 #### Examples:
 
 ```shell
@@ -163,6 +183,26 @@ The search-aws script uses provided string to search the archive databases. You 
 `-m/--max-results-per-query MAX_RESULTS_PER_QUERY`: Maximum results per query. (Default is 10,000,000. No need to set this.)
 
 `-u/--uri-only`: Suppress all output in the primary file (FILE.out.tsv) except for the S3 URIs.
+
+##### File Type Filtering Options
+
+By default, results are filtered to show only files relevant to project managers (equivalent to `-gprv`). Use these flags to customize filtering:
+
+`-a/--all`: Show all results without filtering
+
+`-r/--raw-reads`: Include raw read files (FASTQ)
+
+`-p/--mapped-reads`: Include mapped read files (BAM and CRAM with indexes)
+
+`-b/--bam`: Include BAM files and their indexes
+
+`-c/--cram`: Include CRAM files and their indexes
+
+`-v/--vcf`: Include VCF files and their indexes
+
+`-g/--configs`: Include configuration files
+
+`-n/--no-index`: Exclude index files (.bai, .crai, .tbi) when used with other flags
 
 #### Example:
 
