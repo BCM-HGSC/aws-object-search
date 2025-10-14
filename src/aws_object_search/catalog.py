@@ -120,6 +120,35 @@ class S3ObjectCatalog:
             most_recent_scans.values(), key=attrgetter("scan_start", "bucket_name")
         )
 
+    def archive_old_scans(self) -> None:
+        """
+        Move old (non-current) scan files to archive directory organized by date.
+        Archive path format: {catalog_root}/archive/{year}/{month}/{day}/
+        """
+        current_scans = {b.file_path for b in self.current_bucket_scans()}
+        old_scans = [
+            b for b in self.all_bucket_scans() if b.file_path not in current_scans
+        ]
+
+        if not old_scans:
+            logger.info("No old scans to archive")
+            return
+
+        for scan in old_scans:
+            # Extract year, month, day from scan_start
+            year = scan.scan_start.strftime("%Y")
+            month = scan.scan_start.strftime("%m")
+            day = scan.scan_start.strftime("%d")
+
+            # Create archive directory path
+            archive_dir = self.catalog_root / "archive" / year / month / day
+            archive_dir.mkdir(parents=True, exist_ok=True)
+
+            # Move file to archive
+            destination = archive_dir / scan.file_path.name
+            logger.info(f"Archiving {scan.file_path.name} to {archive_dir}")
+            scan.file_path.rename(destination)
+
     def all_bucket_scans(self) -> Iterable[BucketScan]:
         """Yield all scans in catalog, .tsv files before .tsv.gz files."""
         patterns = ["????????-??????-*.tsv", "????????-??????-*.tsv.gz"]

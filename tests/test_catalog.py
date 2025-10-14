@@ -175,3 +175,114 @@ def test_gzipped_catalog(temp_gzipped_catalog) -> None:
         "checksum_type": "FULL_OBJECT",
         "key": "v1/illumina/wex/fastqs/Sample_HY2L7DSX2-3-IDUDI0076/event.json",
     }
+
+
+def test_archive_old_scans(tmp_path, simple_catalog_path) -> None:
+    "Test that old scans are moved to archive with correct directory structure"
+    from shutil import copytree
+
+    # Create a copy of the simple catalog in tmp_path
+    test_catalog_root = tmp_path / "test_catalog"
+    copytree(simple_catalog_path, test_catalog_root)
+
+    catalog = S3ObjectCatalog(test_catalog_root)
+
+    # Before archiving, verify we have 6 total scans
+    all_scans_before = list(catalog.all_bucket_scans())
+    assert len(all_scans_before) == 6
+
+    # Archive old scans
+    catalog.archive_old_scans()
+
+    # After archiving, only current scans should remain in catalog_root
+    remaining_files = sorted(
+        [f.name for f in test_catalog_root.iterdir() if f.is_file()]
+    )
+    expected_remaining = [
+        "20250504-164832-hgsc-a-1-2-3.tsv",
+        "20250504-164833-hgsc-c-123.tsv",
+        "20250504-164834-hgsc-d.tsv",
+        "20250505-164832-hgsc-b123.tsv",
+    ]
+    assert remaining_files == expected_remaining
+
+    # Check that old scans are in the archive
+    archive_root = test_catalog_root / "archive"
+    assert archive_root.exists()
+
+    # Check that archived files are in correct date directories
+    # 20250503-164831-hgsc-a-1-2-3.tsv -> archive/2025/05/03/
+    archived_file_1 = (
+        archive_root / "2025" / "05" / "03" / "20250503-164831-hgsc-a-1-2-3.tsv"
+    )
+    assert archived_file_1.exists()
+
+    # 20250503-164832-hgsc-c-123.tsv -> archive/2025/05/03/
+    archived_file_2 = (
+        archive_root / "2025" / "05" / "03" / "20250503-164832-hgsc-c-123.tsv"
+    )
+    assert archived_file_2.exists()
+
+    # Verify current_bucket_scans still works after archiving
+    current_scans = catalog.current_bucket_scans()
+    assert len(current_scans) == 4
+
+
+def test_archive_with_gzipped_files(tmp_path, simple_catalog_path) -> None:
+    "Test archiving works with .tsv.gz files"
+    import gzip
+    from shutil import copytree
+
+    # Create a copy of the simple catalog with .gz files
+    test_catalog_root = tmp_path / "test_catalog_gz"
+    copytree(simple_catalog_path, test_catalog_root)
+
+    # Convert one of the old files to .gz
+    old_file = test_catalog_root / "20250503-164831-hgsc-a-1-2-3.tsv"
+    gz_file = test_catalog_root / "20250503-164831-hgsc-a-1-2-3.tsv.gz"
+
+    with open(old_file, "rb") as f_in:
+        with gzip.open(gz_file, "wb") as f_out:
+            f_out.write(f_in.read())
+    old_file.unlink()
+
+    catalog = S3ObjectCatalog(test_catalog_root)
+    catalog.archive_old_scans()
+
+    # Check that the .gz file was archived
+    archived_gz_file = (
+        test_catalog_root
+        / "archive"
+        / "2025"
+        / "05"
+        / "03"
+        / "20250503-164831-hgsc-a-1-2-3.tsv.gz"
+    )
+    assert archived_gz_file.exists()
+
+
+def test_archive_no_old_scans(tmp_path) -> None:
+    "Test archive_old_scans with no old scans to archive"
+    # Create a catalog with only current scans
+    test_catalog_root = tmp_path / "test_catalog_no_old"
+    test_catalog_root.mkdir()
+
+    catalog = S3ObjectCatalog(test_catalog_root)
+
+    # Create a single scan file
+    catalog.output_s3_objects_to_tsv(
+        [{"Key": "test.txt", "Size": 100, "LastModified": "2025-05-05T16:48:32"}],
+        "test-bucket",
+        "20250505-164832"
+    )
+
+    # Archive should do nothing
+    catalog.archive_old_scans()
+
+    # File should still be in catalog_root
+    remaining_files = list(test_catalog_root.glob("*.tsv.gz"))
+    assert len(remaining_files) == 1
+
+    # No archive directory should be created
+    archive_root = test_catalog_root / "archive"
+    assert not archive_root.exists()

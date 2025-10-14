@@ -83,6 +83,8 @@ def index_catalog(catalog_root: Path, index_path: Path) -> None:
     "Populate a new index, replacing any existing index."
     catalog = S3ObjectCatalog(catalog_root)
     regenerate_index(index_path, catalog.iter_dicts())
+    logger.info("Archiving old scan files...")
+    catalog.archive_old_scans()
 
 
 def regenerate_index(index_path: Path, documents: Iterable[dict[str, str]]) -> None:
