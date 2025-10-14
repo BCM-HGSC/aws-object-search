@@ -137,6 +137,31 @@ def search_aws(args: argparse.Namespace | None = None) -> None:
     logger.info(f"Output root: {args.output_root}")
     logger.info(f"Query string: '{args.query}'")
 
+    # Warn about -m without --all (filtering happens after limit)
+    if args.max_results_per_query != 10_000_000 and not args.all:
+        print(
+            "Warning: --max-results-per-query limit is applied before "
+            "file type filtering. Use --all with -m for predictable results.",
+            file=stderr,
+        )
+
+    # Warn about --all with conflicting file type flags
+    if args.all and any(
+        [
+            args.raw_reads,
+            args.mapped_reads,
+            args.bam,
+            args.cram,
+            args.vcf,
+            args.configs,
+        ]
+    ):
+        print(
+            "Warning: --all overrides file type filtering flags "
+            "(-r, -p, -b, -c, -v, -g).",
+            file=stderr,
+        )
+
     # Build file endings filter based on command-line args
     file_endings = build_file_endings_filter(args)
 
@@ -232,6 +257,31 @@ def search_py(args: argparse.Namespace | None = None) -> None:
     config_logging(args.log_level)
     logger.info(f"Output root: {args.output_root}")
     logger.info(f"Input file: '{args.file}'")
+
+    # Warn about -m without --all (filtering happens after limit)
+    if args.max_results_per_query != 10_000_000 and not args.all:
+        print(
+            "Warning: --max-results-per-query limit is applied before "
+            "file type filtering. Use --all with -m for predictable results.",
+            file=stderr,
+        )
+
+    # Warn about --all with conflicting file type flags
+    if args.all and any(
+        [
+            args.raw_reads,
+            args.mapped_reads,
+            args.bam,
+            args.cram,
+            args.vcf,
+            args.configs,
+        ]
+    ):
+        print(
+            "Warning: --all overrides file type filtering flags "
+            "(-r, -p, -b, -c, -v, -g).",
+            file=stderr,
+        )
 
     # Build file endings filter based on command-line args
     file_endings = build_file_endings_filter(args)
