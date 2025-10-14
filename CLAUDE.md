@@ -51,8 +51,13 @@ There is a `bin` in the project root with symlinks to executables in `env/bin/`.
 bin/aos-scan --bucket-prefix hgsc-b
 
 # Search the index
-bin/search-aws
-bin/search.py
+bin/search-aws query_string
+bin/search.py input_file.txt
+
+# Search with file type filtering
+bin/search-aws query_string --raw-reads  # Only FASTQ files
+bin/search-aws query_string --all        # All results, no filtering
+bin/search-aws query_string -gprv        # Configs, mapped-reads, raw-reads, VCF (default)
 
 # Using ruff to check PATH/TO/FILE
 bin/ruff check PATH/TO/FILE
@@ -75,6 +80,7 @@ This is an S3 object search system with two main phases:
 
 ### Phase 2: Searching (`search-aws`, `search.py`)
 - **Search Interface** (`tantivy_wrapper.py`): Queries the Tantivy index
+- **File Type Filtering** (`entry.py`): Post-query filtering by file endings to show only relevant results
 
 ### Key Components
 - `src/aws_object_search/s3_wrapper.py`: AWS S3 interaction, bucket scanning

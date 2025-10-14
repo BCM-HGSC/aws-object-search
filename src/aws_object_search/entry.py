@@ -8,12 +8,131 @@ import botocore.exceptions
 from . import __version__
 from .logging import config_logging
 from .s3_wrapper import run_s3_object_scan
-from .tantivy_wrapper import index_catalog, run_query, search_index_simple
+from .tantivy_wrapper import index_catalog, run_query
 
 logger = getLogger(__name__)
 
 # Default directory for catalog and index files
 DEFAULT_OUTPUT_ROOT = Path(prefix).resolve().parent / "s3_objects"
+
+# File endings for filtering search results
+RAW_READS_ENDINGS = [
+    "_sequence.txt.bz2",
+    "_sequence.txt.gz",
+    "_sequence.txt",
+    ".fastq.gz",
+    "_001.fastq.gz",
+]
+
+CONFIG_ENDINGS = [
+    "BWAConfigParams.txt",
+    ".config.csv",
+    "config.txt",
+    "event.json",
+    "FCDefn.json",
+    "SEDefn.json",
+    "MEDefn.json",
+    "MergeDefn.json",
+]
+
+BAM_ENDINGS = [
+    "_realigned.bam",
+    ".realigned.recal.bam",
+    ".recal.realigned.bam",
+    ".hgv.bam",
+]
+
+CRAM_ENDINGS = [
+    ".hgv.cram",
+]
+
+VCF_ENDINGS = [
+    ".SNPs_Annotated.vcf",
+    "_snp.vcf.gz",
+    ".INDELs_Annotated.vcf",
+    "_indel.vcf.gz",
+]
+
+BAM_INDEX_ENDINGS = ["bam.bai"]
+CRAM_INDEX_ENDINGS = ["cram.crai"]
+VCF_INDEX_ENDINGS = ["vcf.gz.tbi"]
+
+
+def build_file_endings_filter(args: argparse.Namespace) -> list[str] | None:
+    """
+    Build list of allowed file endings based on command-line args.
+    Returns None if no filtering should be applied (--all flag).
+    Returns list of endings for filtering by default or with specific flags.
+    """
+    # --all overrides everything
+    if args.all:
+        return None
+
+    selected_endings = []
+
+    # If no type flags specified, use default (equivalent to -gprv)
+    no_flags_specified = not any(
+        [
+            args.raw_reads,
+            args.mapped_reads,
+            args.bam,
+            args.cram,
+            args.vcf,
+            args.configs,
+        ]
+    )
+
+    # Handle --raw-reads or default
+    if args.raw_reads or no_flags_specified:
+        selected_endings.extend(RAW_READS_ENDINGS)
+
+    # Handle --configs or default
+    if args.configs or no_flags_specified:
+        selected_endings.extend(CONFIG_ENDINGS)
+
+    # Handle --mapped-reads (includes both BAM and CRAM)
+    if args.mapped_reads or no_flags_specified:
+        selected_endings.extend(BAM_ENDINGS)
+        selected_endings.extend(CRAM_ENDINGS)
+        if not args.no_index:
+            selected_endings.extend(BAM_INDEX_ENDINGS)
+            selected_endings.extend(CRAM_INDEX_ENDINGS)
+    else:
+        # Handle individual --bam flag
+        if args.bam:
+            selected_endings.extend(BAM_ENDINGS)
+            if not args.no_index:
+                selected_endings.extend(BAM_INDEX_ENDINGS)
+
+        # Handle individual --cram flag
+        if args.cram:
+            selected_endings.extend(CRAM_ENDINGS)
+            if not args.no_index:
+                selected_endings.extend(CRAM_INDEX_ENDINGS)
+
+    # Handle --vcf or default
+    if args.vcf or no_flags_specified:
+        selected_endings.extend(VCF_ENDINGS)
+        if not args.no_index:
+            selected_endings.extend(VCF_INDEX_ENDINGS)
+
+    return selected_endings if selected_endings else None
+
+
+def filter_by_file_endings(uri: str, endings: list[str] | None) -> bool:
+    """
+    Check if URI ends with one of the allowed endings.
+    If endings is None, all URIs pass through (no filtering).
+    Returns True if URI should be included in results.
+    """
+    if endings is None:
+        return True
+
+    for ending in endings:
+        if uri.endswith(ending):
+            return True
+
+    return False
 
 
 def aos_scan(args: argparse.Namespace | None = None) -> None:
@@ -94,13 +213,32 @@ def search_aws(args: argparse.Namespace | None = None) -> None:
     config_logging(args.log_level)
     logger.info(f"Output root: {args.output_root}")
     logger.info(f"Query string: '{args.query}'")
+
+    # Build file endings filter based on command-line args
+    file_endings = build_file_endings_filter(args)
+
     try:
-        search_index_simple(
-            args.output_root / "index",
-            args.query,
-            uri_only=args.uri_only,
-            max_results=args.max_results_per_query,
+        results = run_query(
+            args.output_root / "index", args.query, args.max_results_per_query
         )
+
+        for _score, doc in results:
+            bucket_name = doc.bucket_name
+            key = doc.key
+            s3_uri = f"s3://{bucket_name}/{key}"
+
+            # Apply file ending filter
+            if not filter_by_file_endings(s3_uri, file_endings):
+                continue
+
+            if args.uri_only:
+                print(s3_uri)
+            else:
+                size = doc.size
+                last_modified = doc.last_modified
+                storage_class = doc.storage_class
+                print(f"{s3_uri}\t{size}\t{last_modified}\t{storage_class}")
+
     except BrokenPipeError:
         pass  # normal; for example, piped to "head" command
     stderr.close()
@@ -168,6 +306,54 @@ Output format:
         default="WARNING",
         help="Logging level (default: WARNING)",
     )
+    parser.add_argument(
+        "-a",
+        "--all",
+        action="store_true",
+        help="Show all results without filtering",
+    )
+    parser.add_argument(
+        "-r",
+        "--raw-reads",
+        action="store_true",
+        help="Include raw read files (FASTQ)",
+    )
+    parser.add_argument(
+        "-p",
+        "--mapped-reads",
+        action="store_true",
+        help="Include mapped read files (BAM and CRAM with indexes)",
+    )
+    parser.add_argument(
+        "-b",
+        "--bam",
+        action="store_true",
+        help="Include BAM files and their indexes",
+    )
+    parser.add_argument(
+        "-c",
+        "--cram",
+        action="store_true",
+        help="Include CRAM files and their indexes",
+    )
+    parser.add_argument(
+        "-v",
+        "--vcf",
+        action="store_true",
+        help="Include VCF files and their indexes",
+    )
+    parser.add_argument(
+        "-g",
+        "--configs",
+        action="store_true",
+        help="Include configuration files",
+    )
+    parser.add_argument(
+        "-n",
+        "--no-index",
+        action="store_true",
+        help="Exclude index files (.bai, .crai, .tbi)",
+    )
     return parser.parse_args()
 
 
@@ -178,6 +364,9 @@ def search_py(args: argparse.Namespace | None = None) -> None:
     config_logging(args.log_level)
     logger.info(f"Output root: {args.output_root}")
     logger.info(f"Input file: '{args.file}'")
+
+    # Build file endings filter based on command-line args
+    file_endings = build_file_endings_filter(args)
 
     # Read search terms from input file
     try:
@@ -225,24 +414,41 @@ def search_py(args: argparse.Namespace | None = None) -> None:
                     )
 
                     if results:
-                        match_count = len(results)
+                        # Apply file ending filter to results
+                        filtered_results = [
+                            (_score, doc)
+                            for _score, doc in results
+                            if filter_by_file_endings(
+                                f"s3://{doc.bucket_name}/{doc.key}", file_endings
+                            )
+                        ]
+
+                        match_count = len(filtered_results)
                         total_matches += match_count
-                        info_file.write(f"{term}\t{match_count} matches\n")
 
-                        for _score, doc in results:
-                            bucket_name = doc.bucket_name
-                            key = doc.key
-                            s3_uri = f"s3://{bucket_name}/{key}"
+                        if filtered_results:
+                            info_file.write(f"{term}\t{match_count} matches\n")
 
-                            if args.uri_only:
-                                out_file.write(f"{s3_uri}\n")
-                            else:
-                                size = doc.size
-                                last_modified = doc.last_modified
-                                storage_class = doc.storage_class
-                                out_file.write(
-                                    f"{s3_uri}\t{size}\t{last_modified}\t{storage_class}\n"
-                                )
+                            for _score, doc in filtered_results:
+                                bucket_name = doc.bucket_name
+                                key = doc.key
+                                s3_uri = f"s3://{bucket_name}/{key}"
+
+                                if args.uri_only:
+                                    out_file.write(f"{s3_uri}\n")
+                                else:
+                                    size = doc.size
+                                    last_modified = doc.last_modified
+                                    storage_class = doc.storage_class
+                                    out_file.write(
+                                        f"{s3_uri}\t{size}\t{last_modified}\t{storage_class}\n"
+                                    )
+                        else:
+                            # No results after filtering
+                            not_found_terms.append(term)
+                            not_found_file.write(f"{term}\t0 matches\n")
+                            not_found_list_file.write(f"{term}\n")
+                            info_file.write(f"{term}\t0 matches\n")
                     else:
                         not_found_terms.append(term)
                         not_found_file.write(f"{term}\t0 matches\n")
@@ -345,6 +551,54 @@ Output format:
         type=str,
         default="WARNING",
         help="Logging level (default: WARNING)",
+    )
+    parser.add_argument(
+        "-a",
+        "--all",
+        action="store_true",
+        help="Show all results without filtering",
+    )
+    parser.add_argument(
+        "-r",
+        "--raw-reads",
+        action="store_true",
+        help="Include raw read files (FASTQ)",
+    )
+    parser.add_argument(
+        "-p",
+        "--mapped-reads",
+        action="store_true",
+        help="Include mapped read files (BAM and CRAM with indexes)",
+    )
+    parser.add_argument(
+        "-b",
+        "--bam",
+        action="store_true",
+        help="Include BAM files and their indexes",
+    )
+    parser.add_argument(
+        "-c",
+        "--cram",
+        action="store_true",
+        help="Include CRAM files and their indexes",
+    )
+    parser.add_argument(
+        "-v",
+        "--vcf",
+        action="store_true",
+        help="Include VCF files and their indexes",
+    )
+    parser.add_argument(
+        "-g",
+        "--configs",
+        action="store_true",
+        help="Include configuration files",
+    )
+    parser.add_argument(
+        "-n",
+        "--no-index",
+        action="store_true",
+        help="Exclude index files (.bai, .crai, .tbi)",
     )
     args = parser.parse_args()
 
