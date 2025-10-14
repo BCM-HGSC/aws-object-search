@@ -127,6 +127,40 @@ class S3ObjectCatalog:
             for file_path in self.catalog_root.glob(pattern):
                 yield BucketScan(file_path)
 
+    def archive_old_scans(self) -> None:
+        """
+        Move old (non-current) scan files to archive directory organized by date.
+        Archive path format: {catalog_root}/archive/{year}/{month}/{day}/
+        """
+        current_scans = {b.file_path for b in self.current_bucket_scans()}
+        old_scans = [
+            b for b in self.all_bucket_scans() if b.file_path not in current_scans
+        ]
+
+        if not old_scans:
+            logger.info("No old scans to archive")
+            return
+
+        for scan in old_scans:
+            # Extract year, month, day from scan_start
+            year = scan.scan_start.strftime("%Y")
+            month = scan.scan_start.strftime("%m")
+            day = scan.scan_start.strftime("%d")
+
+            # Create archive directory path
+            archive_dir = self.catalog_root / "archive" / year / month / day
+            archive_dir.mkdir(parents=True, exist_ok=True)
+
+            # Move file to archive
+            destination = archive_dir / scan.file_path.name
+            logger.info(f"Archiving {scan.file_path.name} to {archive_dir}")
+            try:
+                scan.file_path.rename(destination)
+            except FileExistsError:
+                logger.warning(f"Destination already exists, skipping: {destination}")
+            except OSError as e:
+                logger.error(f"Failed to archive {scan.file_path.name}: {e}")
+
     def output_s3_objects_to_tsv(
         self,
         s3_objects: Iterable[dict[str, Any]],
