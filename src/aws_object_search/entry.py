@@ -441,17 +441,12 @@ Output format:
 def build_file_endings_filter(args: argparse.Namespace) -> list[str] | None:
     """
     Build list of allowed file endings based on command-line args.
-    Returns None if no filtering should be applied (--all flag).
+    Returns None if no filtering should be applied (--all flag without file types).
     Returns list of endings for filtering by default or with specific flags.
+    Explicit file type flags take precedence over --all.
     """
-    # --all overrides everything
-    if args.all:
-        return None
-
-    selected_endings = []
-
-    # If no type flags specified, use default (equivalent to -gprv)
-    no_flags_specified = not any(
+    # Check if any explicit file type flags are specified
+    any_file_types_specified = any(
         [
             args.raw_reads,
             args.mapped_reads,
@@ -461,6 +456,15 @@ def build_file_endings_filter(args: argparse.Namespace) -> list[str] | None:
             args.configs,
         ]
     )
+
+    # --all only applies when no explicit file types are specified
+    if args.all and not any_file_types_specified:
+        return None
+
+    selected_endings = []
+
+    # If no type flags specified, use default (equivalent to -gprv)
+    no_flags_specified = not any_file_types_specified
 
     # Handle --raw-reads or default
     if args.raw_reads or no_flags_specified:
@@ -630,7 +634,6 @@ def warn_about_flag_conflicts(args: argparse.Namespace) -> None:
         ]
     ):
         print(
-            "Warning: --all overrides file type filtering flags "
-            "(-r, -p, -b, -c, -v, -g).",
+            "Warning: File type flags specified; ignoring --all flag.",
             file=stderr,
         )

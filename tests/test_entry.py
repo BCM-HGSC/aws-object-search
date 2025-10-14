@@ -272,8 +272,8 @@ def test_build_filter_bam_and_cram():
     assert result == expected
 
 
-def test_build_filter_all_overrides_other_flags():
-    """Test that --all flag overrides all other flags."""
+def test_build_filter_file_types_override_all():
+    """Test that explicit file type flags override --all flag."""
     args = argparse.Namespace(
         all=True,
         raw_reads=True,
@@ -285,7 +285,15 @@ def test_build_filter_all_overrides_other_flags():
         no_index=True,
     )
     result = build_file_endings_filter(args)
-    assert result is None
+    # Should return file endings based on specified flags, not None
+    expected = (
+        RAW_READS_ENDINGS
+        + CONFIG_ENDINGS
+        + BAM_ENDINGS
+        + CRAM_ENDINGS
+        + VCF_ENDINGS
+    )
+    assert result == expected
 
 
 # Tests for filter_by_file_endings
