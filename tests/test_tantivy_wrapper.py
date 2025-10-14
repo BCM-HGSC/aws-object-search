@@ -152,11 +152,18 @@ def test_search_index_simple(tmp_path, sample_documents, capsys):
 
 def test_index_catalog(tmp_path, simple_catalog_path):
     """Test that index_catalog creates an index from a catalog."""
-    index_catalog(simple_catalog_path, tmp_path)
-    assert tmp_path.exists()
+    from shutil import copytree
+
+    # Create a copy of the catalog to avoid modifying test resources
+    catalog_copy = tmp_path / "catalog"
+    copytree(simple_catalog_path, catalog_copy)
+
+    index_path = tmp_path / "index"
+    index_catalog(catalog_copy, index_path)
+    assert index_path.exists()
 
     # Test that we can query the indexed data
-    results = list(run_query(tmp_path, "fastq", max_results=100))
+    results = list(run_query(index_path, "fastq", max_results=100))
     # Should find results based on the simple_catalog test data
     assert len(results) > 0
 
