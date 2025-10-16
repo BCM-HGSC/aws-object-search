@@ -1,4 +1,7 @@
 import argparse
+import fcntl
+import multiprocessing
+import time
 
 import pytest
 
@@ -26,8 +29,153 @@ def test_aos_scan_smoke(tmp_path):
         log_level="ERROR",
         no_scan=False,
         no_index=False,
+        flock=None,
     )
     aos_scan(args)
+
+
+# Tests for file locking
+
+
+def test_aos_scan_no_lock(tmp_path):
+    """Test that aos_scan works without flock option (no locking)."""
+    args = argparse.Namespace(
+        bucket_prefix=None,
+        output_root=tmp_path,
+        log_level="ERROR",
+        no_scan=True,
+        no_index=True,
+        flock=None,
+    )
+    # Should complete without error
+    aos_scan(args)
+
+
+def test_aos_scan_with_lock_acquired(tmp_path):
+    """Test that aos_scan successfully acquires lock when available."""
+    lock_file = tmp_path / "test.lock"
+    args = argparse.Namespace(
+        bucket_prefix=None,
+        output_root=tmp_path,
+        log_level="ERROR",
+        no_scan=True,
+        no_index=True,
+        flock=lock_file,
+    )
+    # Should complete without error and create lock file
+    aos_scan(args)
+    # Lock file should exist after scan
+    assert lock_file.exists()
+
+
+def test_aos_scan_lock_blocking(tmp_path):
+    """Test that aos_scan exits with code 2 when lock is held by another process."""
+    lock_file = tmp_path / "test.lock"
+
+    # Acquire lock in this process
+    with open(lock_file, "w") as lf:
+        fcntl.flock(lf.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+        # Try to run aos_scan with the same lock file (should fail)
+        args = argparse.Namespace(
+            bucket_prefix=None,
+            output_root=tmp_path,
+            log_level="ERROR",
+            no_scan=True,
+            no_index=True,
+            flock=lock_file,
+        )
+
+        # Should exit with code 2
+        with pytest.raises(SystemExit) as exc_info:
+            aos_scan(args)
+        assert exc_info.value.code == 2
+
+
+def test_aos_scan_lock_critical_message(tmp_path, caplog):
+    """Test that CRITICAL message is logged when lock acquisition fails."""
+    import logging
+
+    lock_file = tmp_path / "test.lock"
+
+    # Acquire lock in this process
+    with open(lock_file, "w") as lf:
+        fcntl.flock(lf.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+        # Try to run aos_scan with the same lock file
+        args = argparse.Namespace(
+            bucket_prefix=None,
+            output_root=tmp_path,
+            log_level="CRITICAL",
+            no_scan=True,
+            no_index=True,
+            flock=lock_file,
+        )
+
+        # Capture log messages
+        with caplog.at_level(logging.CRITICAL):
+            with pytest.raises(SystemExit) as exc_info:
+                aos_scan(args)
+            assert exc_info.value.code == 2
+
+        # Check that CRITICAL message was logged
+        assert any("already running" in record.message for record in caplog.records)
+
+
+def _run_aos_scan_with_lock(lock_file, result_queue, hold_time=0.5):
+    """Helper function to run aos_scan in a separate process."""
+    # Manually acquire lock to hold it for a specific duration
+    try:
+        with open(lock_file, "w") as lf:
+            fcntl.flock(lf.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            result_queue.put("success")
+            # Hold the lock for the specified time
+            time.sleep(hold_time)
+            # Lock released when file closes
+    except BlockingIOError:
+        result_queue.put("exit_2")
+    except Exception as e:
+        result_queue.put(f"error_{e}")
+
+
+def test_aos_scan_concurrent_blocking(tmp_path):
+    """Test that concurrent aos_scan processes properly block each other."""
+    lock_file = tmp_path / "concurrent.lock"
+    result_queue = multiprocessing.Queue()
+
+    # Start first process that will hold the lock
+    process1 = multiprocessing.Process(
+        target=_run_aos_scan_with_lock, args=(lock_file, result_queue)
+    )
+    process1.start()
+
+    # Give first process time to acquire lock
+    time.sleep(0.2)
+
+    # Start second process that should fail to acquire lock
+    process2 = multiprocessing.Process(
+        target=_run_aos_scan_with_lock, args=(lock_file, result_queue)
+    )
+    process2.start()
+
+    # Wait for both processes to complete
+    process1.join(timeout=2)
+    process2.join(timeout=2)
+
+    # Collect results
+    results = []
+    while not result_queue.empty():
+        results.append(result_queue.get())
+
+    # First process should succeed, second should exit with code 2
+    assert "success" in results
+    assert "exit_2" in results
+
+    # Clean up
+    if process1.is_alive():
+        process1.terminate()
+    if process2.is_alive():
+        process2.terminate()
 
 
 # Tests for build_file_endings_filter
