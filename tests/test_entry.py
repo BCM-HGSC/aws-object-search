@@ -289,11 +289,7 @@ def test_build_filter_file_types_override_all():
     result = build_file_endings_filter(args)
     # Should return file endings based on specified flags, not None
     expected = (
-        RAW_READS_ENDINGS
-        + CONFIG_ENDINGS
-        + BAM_ENDINGS
-        + CRAM_ENDINGS
-        + VCF_ENDINGS
+        RAW_READS_ENDINGS + CONFIG_ENDINGS + BAM_ENDINGS + CRAM_ENDINGS + VCF_ENDINGS
     )
     assert result == expected
 
@@ -316,31 +312,17 @@ def test_filter_by_file_endings_empty_list():
 def test_filter_by_file_endings_fastq():
     """Test filtering FASTQ files."""
     endings = [".fastq.gz", "_001.fastq.gz"]
-    assert (
-        filter_by_file_endings(
-            "s3://bucket/sample_R1_001.fastq.gz", endings
-        )
-        is True
-    )
-    assert (
-        filter_by_file_endings("s3://bucket/sample.fastq.gz", endings) is True
-    )
+    assert filter_by_file_endings("s3://bucket/sample_R1_001.fastq.gz", endings) is True
+    assert filter_by_file_endings("s3://bucket/sample.fastq.gz", endings) is True
     assert filter_by_file_endings("s3://bucket/sample.bam", endings) is False
 
 
 def test_filter_by_file_endings_bam():
     """Test filtering BAM files."""
     endings = ["_realigned.bam", ".hgv.bam", "bam.bai"]
-    assert (
-        filter_by_file_endings("s3://bucket/sample_realigned.bam", endings)
-        is True
-    )
-    assert (
-        filter_by_file_endings("s3://bucket/sample.hgv.bam", endings) is True
-    )
-    assert (
-        filter_by_file_endings("s3://bucket/sample.bam.bai", endings) is True
-    )
+    assert filter_by_file_endings("s3://bucket/sample_realigned.bam", endings) is True
+    assert filter_by_file_endings("s3://bucket/sample.hgv.bam", endings) is True
+    assert filter_by_file_endings("s3://bucket/sample.bam.bai", endings) is True
     assert filter_by_file_endings("s3://bucket/sample.cram", endings) is False
 
 
@@ -348,46 +330,27 @@ def test_filter_by_file_endings_vcf():
     """Test filtering VCF files."""
     endings = [".SNPs_Annotated.vcf", "_snp.vcf.gz", "vcf.gz.tbi"]
     assert (
-        filter_by_file_endings(
-            "s3://bucket/sample.SNPs_Annotated.vcf", endings
-        )
-        is True
+        filter_by_file_endings("s3://bucket/sample.SNPs_Annotated.vcf", endings) is True
     )
-    assert (
-        filter_by_file_endings("s3://bucket/sample_snp.vcf.gz", endings)
-        is True
-    )
-    assert (
-        filter_by_file_endings("s3://bucket/sample.vcf.gz.tbi", endings)
-        is True
-    )
+    assert filter_by_file_endings("s3://bucket/sample_snp.vcf.gz", endings) is True
+    assert filter_by_file_endings("s3://bucket/sample.vcf.gz.tbi", endings) is True
     assert filter_by_file_endings("s3://bucket/sample.bam", endings) is False
 
 
 def test_filter_by_file_endings_config():
     """Test filtering config files."""
     endings = ["config.txt", "event.json", "FCDefn.json"]
-    assert (
-        filter_by_file_endings("s3://bucket/run/config.txt", endings) is True
-    )
-    assert (
-        filter_by_file_endings("s3://bucket/run/event.json", endings) is True
-    )
-    assert (
-        filter_by_file_endings("s3://bucket/run/FCDefn.json", endings) is True
-    )
+    assert filter_by_file_endings("s3://bucket/run/config.txt", endings) is True
+    assert filter_by_file_endings("s3://bucket/run/event.json", endings) is True
+    assert filter_by_file_endings("s3://bucket/run/FCDefn.json", endings) is True
     assert filter_by_file_endings("s3://bucket/data.txt", endings) is False
 
 
 def test_filter_by_file_endings_case_sensitive():
     """Test that filtering is case-sensitive."""
     endings = [".fastq.gz"]
-    assert (
-        filter_by_file_endings("s3://bucket/sample.fastq.gz", endings) is True
-    )
-    assert (
-        filter_by_file_endings("s3://bucket/sample.FASTQ.GZ", endings) is False
-    )
+    assert filter_by_file_endings("s3://bucket/sample.fastq.gz", endings) is True
+    assert filter_by_file_endings("s3://bucket/sample.FASTQ.GZ", endings) is False
 
 
 def test_filter_by_file_endings_partial_match():
@@ -395,6 +358,4 @@ def test_filter_by_file_endings_partial_match():
     endings = [".bam"]
     assert filter_by_file_endings("s3://bucket/sample.bam", endings) is True
     # Should not match "bam" in the middle of the filename
-    assert (
-        filter_by_file_endings("s3://bucket/bamboo.txt", endings) is False
-    )
+    assert filter_by_file_endings("s3://bucket/bamboo.txt", endings) is False
