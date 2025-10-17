@@ -305,8 +305,8 @@ First create a directory that will contain:
 - the scan data
 
 ```shell
-mkdir -p /path/to/aws-object-search
-cd /path/to/aws-object-search
+mkdir -p path/to/aws-object-search
+cd path/to/aws-object-search
 git clone git@github.com:BCM-HGSC/aws-object-search.git git
 # or use the https URL if you have set up push access that way
 ```
@@ -325,7 +325,7 @@ aws-object-search/
     └── tests/
 ```
 
-After running "`cd /path/to/aws-object-search/ && ./git/deploy`", the filesystem would look like this:
+After running "`cd path/to/aws-object-search/ && ./git/deploy`", the filesystem would look like this:
 
 ```
 aws-object-search
