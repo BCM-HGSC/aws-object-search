@@ -61,7 +61,7 @@ There is a `bin/` directory in the project root with symlinks to executables:
 bin/aos-scan --bucket-prefix hgsc-b
 
 # Scan with file locking to prevent concurrent scans
-bin/aos-scan --bucket-prefix hgsc-b --flock /path/to/lock/file
+bin/aos-scan --flock path/to/lock/file
 
 # Search the index
 bin/search-aws "search_term"
@@ -235,7 +235,7 @@ aws sso login
 To prevent multiple `aos-scan` processes from running simultaneously, use the `--flock` option:
 
 ```bash
-aos-scan --bucket-prefix hgsc-b --flock /path/to/lock/file
+aos-scan --flock path/to/lock/file
 ```
 
 When the `--flock` option is provided:
@@ -245,6 +245,13 @@ When the `--flock` option is provided:
 - The lock is automatically released when the scan completes
 
 This is particularly important in production cron jobs to avoid race conditions during archiving and indexing operations.
+
+#### Example Cron Job
+
+```bash
+# Run daily scan at 2 AM with file locking
+0 2 * * * path/to/aos-scan --flock path/to/aos-scan.lock >> path/to/aos-scan.log 2>&1
+```
 
 ## deployment
 
