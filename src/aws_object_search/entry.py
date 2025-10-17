@@ -1,4 +1,5 @@
 import argparse
+import fcntl
 from logging import getLogger
 from pathlib import Path
 from sys import exit, prefix, stderr
@@ -63,25 +64,55 @@ def aos_scan(args: argparse.Namespace | None = None) -> None:
     if args is None:
         args = parse_scan_args()
     config_logging(args.log_level)
-    logger.info(f"Bucket prefix: {args.bucket_prefix}")
-    logger.info(f"Output root: {args.output_root}")
-    logger.info(f"Scanning: {not args.no_scan}")
-    logger.info(f"Indexing: {not args.no_index}")
-    if not args.no_scan:
-        logger.info("Scanning AWS Objects...")
+
+    # Acquire lock if flock option is specified
+    lock_file = None
+    if args.flock is not None:
         try:
-            run_s3_object_scan(
-                args.output_root,
-                args.bucket_prefix,
+            # Open lock file for writing (create if doesn't exist)
+            lock_file = open(args.flock, "w")
+            # Attempt to acquire exclusive lock (non-blocking)
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            logger.info(f"Acquired lock on {args.flock}")
+        except BlockingIOError:
+            logger.critical(
+                f"Another aos-scan process is already running "
+                f"(lock file: {args.flock}). Exiting."
             )
-        except botocore.exceptions.TokenRetrievalError as e:
-            logger.error(f"Failed to retrieve S3 buckets: {e}")
-            exit("Possibly not logged in")
-        else:
-            logger.info("Scan completed successfully.")
-    if not args.no_index:
-        logger.info("Indexing S3 objects...")
-        index_catalog(args.output_root, args.output_root / "index")
+            if lock_file is not None:
+                lock_file.close()
+            exit(2)
+        except Exception as e:
+            logger.critical(f"Failed to acquire lock on {args.flock}: {e}")
+            if lock_file is not None:
+                lock_file.close()
+            exit(2)
+
+    try:
+        logger.info(f"Bucket prefix: {args.bucket_prefix}")
+        logger.info(f"Output root: {args.output_root}")
+        logger.info(f"Scanning: {not args.no_scan}")
+        logger.info(f"Indexing: {not args.no_index}")
+        if not args.no_scan:
+            logger.info("Scanning AWS Objects...")
+            try:
+                run_s3_object_scan(
+                    args.output_root,
+                    args.bucket_prefix,
+                )
+            except botocore.exceptions.TokenRetrievalError as e:
+                logger.error(f"Failed to retrieve S3 buckets: {e}")
+                exit("Possibly not logged in")
+            else:
+                logger.info("Scan completed successfully.")
+        if not args.no_index:
+            logger.info("Indexing S3 objects...")
+            index_catalog(args.output_root, args.output_root / "index")
+    finally:
+        # Release lock and close lock file
+        if lock_file is not None:
+            lock_file.close()
+            logger.info(f"Released lock on {args.flock}")
 
 
 def parse_scan_args() -> argparse.Namespace:
@@ -125,6 +156,14 @@ def parse_scan_args() -> argparse.Namespace:
         type=str,
         default="INFO",
         help="Logging level (default: INFO)",
+    )
+    parser.add_argument(
+        "-f",
+        "--flock",
+        type=Path,
+        default=None,
+        help="Path to lock file for preventing concurrent scans "
+        "(optional, no locking if not specified)",
     )
     return parser.parse_args()
 
@@ -270,7 +309,6 @@ def search_py(args: argparse.Namespace | None = None) -> None:
             open(output_files["not_found"], "w") as not_found_file,
             open(output_files["not_found_list"], "w") as not_found_list_file,
         ):
-
             # Write headers
             info_file.write("# Search results summary\n")
             info_file.write(f"# Input file: {args.file}\n")
