@@ -18,7 +18,7 @@ def test_aos_scan_version():
         ["bin/aos-scan", "--version"],
         capture_output=True,
         text=True,
-        cwd="/Users/hale/Documents/dev/repo/aws-object-search/aos-repo"
+        cwd="/Users/hale/Documents/dev/repo/aws-object-search/aos-repo",
     )
     assert result.returncode == 0
     assert __version__ in result.stdout
@@ -31,7 +31,7 @@ def test_search_aws_version():
         ["bin/search-aws", "--version"],
         capture_output=True,
         text=True,
-        cwd="/Users/hale/Documents/dev/repo/aws-object-search/aos-repo"
+        cwd="/Users/hale/Documents/dev/repo/aws-object-search/aos-repo",
     )
     assert result.returncode == 0
     assert __version__ in result.stdout
@@ -44,7 +44,7 @@ def test_search_py_version():
         ["bin/search.py", "--version"],
         capture_output=True,
         text=True,
-        cwd="/Users/hale/Documents/dev/repo/aws-object-search/aos-repo"
+        cwd="/Users/hale/Documents/dev/repo/aws-object-search/aos-repo",
     )
     assert result.returncode == 0
     assert __version__ in result.stdout

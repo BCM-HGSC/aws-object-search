@@ -28,7 +28,6 @@ class S3ObjectResult:
     key: str = "MISSING"
 
 
-
 def search_index_simple(
     index_path: Path | str,
     query: str,

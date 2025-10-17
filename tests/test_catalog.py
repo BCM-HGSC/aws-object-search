@@ -273,7 +273,7 @@ def test_archive_no_old_scans(tmp_path) -> None:
     catalog.output_s3_objects_to_tsv(
         [{"Key": "test.txt", "Size": 100, "LastModified": "2025-05-05T16:48:32"}],
         "test-bucket",
-        "20250505-164832"
+        "20250505-164832",
     )
 
     # Archive should do nothing

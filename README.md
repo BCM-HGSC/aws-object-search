@@ -51,7 +51,6 @@ The `deploy` script ignores your home directory contents and most environment va
 - `search.py`: Main search interface that reads a text file containing search terms and generates output files
 - `search-aws`: Command-line search tool that accepts a single search term and outputs to stdout
 - `aos-scan`: Scans S3 buckets (all or with specified prefix) and generates TSV catalog files, then creates search index
-- `python3 bin/searchGlacier.py`: Legacy brute-force `O(N)` metadata search of all objects within readable or specified buckets. This script is mainly for reference and should not normally be used. Unless the buckets to be searched are limited, a single search could take several minutes.
 
 ### Running Tools in Development
 
@@ -306,8 +305,8 @@ First create a directory that will contain:
 - the scan data
 
 ```shell
-mkdir -p /path/to/aws-object-search
-cd /path/to/aws-object-search
+mkdir -p path/to/aws-object-search
+cd path/to/aws-object-search
 git clone git@github.com:BCM-HGSC/aws-object-search.git git
 # or use the https URL if you have set up push access that way
 ```
@@ -326,7 +325,7 @@ aws-object-search/
     └── tests/
 ```
 
-After running "`cd /path/to/aws-object-search/ && ./git/deploy`", the filesystem would look like this:
+After running "`cd path/to/aws-object-search/ && ./git/deploy`", the filesystem would look like this:
 
 ```
 aws-object-search

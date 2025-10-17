@@ -75,7 +75,8 @@ class BucketScan:
     def flattened_dict(self) -> dict[str, str]:
         "Fatten to str-based dict"
         return {
-            "scan_start": self.scan_start.isoformat(), "bucket_name": self.bucket_name
+            "scan_start": self.scan_start.isoformat(),
+            "bucket_name": self.bucket_name,
         }
 
 
