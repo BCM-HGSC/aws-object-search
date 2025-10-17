@@ -51,7 +51,6 @@ The `deploy` script ignores your home directory contents and most environment va
 - `search.py`: Main search interface that reads a text file containing search terms and generates output files
 - `search-aws`: Command-line search tool that accepts a single search term and outputs to stdout
 - `aos-scan`: Scans S3 buckets (all or with specified prefix) and generates TSV catalog files, then creates search index
-- `python3 bin/searchGlacier.py`: Legacy brute-force `O(N)` metadata search of all objects within readable or specified buckets. This script is mainly for reference and should not normally be used. Unless the buckets to be searched are limited, a single search could take several minutes.
 
 ### Running Tools in Development
 
