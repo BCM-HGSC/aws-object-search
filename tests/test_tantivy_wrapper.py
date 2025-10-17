@@ -136,7 +136,7 @@ def test_search_index_simple(tmp_path, sample_documents, capsys):
     # Test with uri_only=False
     search_index_simple(tmp_path, "file1", uri_only=False, max_results=10)
     captured = capsys.readouterr()
-    output_lines = captured.out.strip().split('\n')
+    output_lines = captured.out.strip().split("\n")
     assert len(output_lines) == 1
     assert "s3://test-bucket-1/path/to/file1.txt" in output_lines[0]
     assert "1024" in output_lines[0]
@@ -145,7 +145,7 @@ def test_search_index_simple(tmp_path, sample_documents, capsys):
     # Test with uri_only=True
     search_index_simple(tmp_path, "file2", uri_only=True, max_results=10)
     captured = capsys.readouterr()
-    output_lines = captured.out.strip().split('\n')
+    output_lines = captured.out.strip().split("\n")
     assert len(output_lines) == 1
     assert output_lines[0] == "s3://test-bucket-2/another/path/file2.txt"
 
