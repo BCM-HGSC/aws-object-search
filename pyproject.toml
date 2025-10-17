@@ -50,6 +50,7 @@ addopts = "--strict-markers"
 [tool.ruff]
 target-version = "py312"
 line-length = 88
+include = ["src/**/*.py", "tests/**/*.py"]
 
 [tool.ruff.lint]
 select = [
