@@ -50,6 +50,9 @@ There is a `bin` in the project root with symlinks to executables in `env/bin/`.
 # Scan S3 buckets with prefix
 bin/aos-scan --bucket-prefix hgsc-b
 
+# Scan with file locking to prevent concurrent scans
+bin/aos-scan --bucket-prefix hgsc-b --flock /path/to/lock/file
+
 # Search the index
 bin/search-aws query_string
 bin/search.py input_file.txt

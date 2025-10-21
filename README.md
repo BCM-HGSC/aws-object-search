@@ -60,6 +60,9 @@ There is a `bin/` directory in the project root with symlinks to executables:
 # Scan S3 buckets with prefix
 bin/aos-scan --bucket-prefix hgsc-b
 
+# Scan with file locking to prevent concurrent scans
+bin/aos-scan --flock path/to/lock/file
+
 # Search the index
 bin/search-aws "search_term"
 bin/search.py input_file.txt
@@ -227,6 +230,29 @@ export AWS_PROFILE=scan-dev
 aws sso login
 ```
 
+### Preventing Concurrent Scans
+
+To prevent multiple `aos-scan` processes from running simultaneously, use the `--flock` option:
+
+```bash
+aos-scan --flock path/to/lock/file
+```
+
+When the `--flock` option is provided:
+- The scan attempts to acquire an exclusive lock on the specified file
+- If another scan is already running with the same lock file, the new scan exits with code 2
+- If the lock is not available, a CRITICAL message is logged
+- The lock is automatically released when the scan completes
+
+This is particularly important in production cron jobs to avoid race conditions during archiving and indexing operations.
+
+#### Example Cron Job
+
+```bash
+# Run daily scan at 2 AM with file locking
+0 2 * * * path/to/aos-scan --flock path/to/aos-scan.lock >> path/to/aos-scan.log 2>&1
+```
+
 ## deployment
 
 ### production
@@ -264,7 +290,7 @@ ln -s ../current/bin/{search-aws,search.py} .
 
 #### deploying a new version
 
-When a new public release is generated, 
+When a new public release is generated,
 Production invocation from source directory:
 
 ```shell
