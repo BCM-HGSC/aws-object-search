@@ -104,6 +104,28 @@ Production uses versioned deployments via the `deploy` script:
 
 - Always run ruff to validate new code.
 
+## Release Management
+
+### Git Tag Style
+
+Use minimal, single-line tag messages for releases:
+
+```bash
+git tag -a vX.Y.Z -m "Release vX.Y.Z: [One sentence on primary feature/focus]"
+```
+
+Rationale:
+- Tag serves as a commit pointer with minimal metadata
+- Detailed release notes are maintained in `release-notes/` directory as the canonical source
+- Avoids duplication between tag and release-notes
+- Faster to create consistently
+
+Example tag messages:
+```
+v1.0.0-rc2: Smart file type filtering for search results
+v1.0.0-rc1: Production-ready search tool with quality improvements
+```
+
 ## File Handling Guidelines
 
 - Files should always end with a newline unless the target file format forbids it.
