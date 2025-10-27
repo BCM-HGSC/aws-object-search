@@ -33,6 +33,15 @@ Batch search that processes multiple queries from a text file and generates orga
 search.py input_file.txt
 ```
 
+## Getting Help
+
+Both search tools include a `--help` option that displays all available flags and options:
+
+```bash
+search-aws --help
+search.py --help
+```
+
 ## Basic Examples
 
 ### Single Search: Find Files by Name
