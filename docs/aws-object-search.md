@@ -93,8 +93,8 @@ search-aws "project_name" -a
 File type flags can be combined:
 
 ```bash
-# Show VCF and configuration files together
-search.py sample_list.txt -v -g
+# Show FASTQ and VCF files together
+search.py sample_list.txt -r -v
 ```
 
 ### Clean Output Format
@@ -138,4 +138,4 @@ zgrep "search_pattern" /hgsc_software/aws-object-search/s3_objects/catalog.tsv.g
 zcat /hgsc_software/aws-object-search/s3_objects/catalog.tsv.gz | grep "search_pattern"
 ```
 
-The search index in `s3_objects/index/` provides the backend for the `search-aws` and `search.py` commands.
+The `s3_objects/index/` directory contains a Tantivy search index that powers the `search-aws` and `search.py` commands. Unless you are writing a custom query tool, there is no need to access the files in this directory directly.
