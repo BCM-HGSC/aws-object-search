@@ -10,9 +10,7 @@ You must have:
 - The `search-aws` and `search.py` aliases available in your shell (these should not be suppressed)
 - Understanding of the following terms:
   - [S3 bucket](https://en.wikipedia.org/wiki/Amazon_S3): Cloud storage container in AWS
-  - [Glob pattern](https://en.wikipedia.org/wiki/Glob_(programming)): Wildcard pattern matching (e.g., `*.txt`, `file_*`)
   - [TSV file](https://en.wikipedia.org/wiki/Tab-separated_values): Text file with data separated by tabs
-  - [Wildcard](https://en.wikipedia.org/wiki/Wildcard_character): Special character (`*` or `?`) used in search patterns
   - [Compressed file](https://en.wikipedia.org/wiki/Data_compression): File that has been reduced in size using compression algorithms (e.g., `.gz`, `.bz2`)
 
 ## Search Commands Overview
