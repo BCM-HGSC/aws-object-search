@@ -507,3 +507,16 @@ def test_filter_by_file_endings_partial_match():
     assert filter_by_file_endings("s3://bucket/sample.bam", endings) is True
     # Should not match "bam" in the middle of the filename
     assert filter_by_file_endings("s3://bucket/bamboo.txt", endings) is False
+
+
+def test_filter_by_file_endings_cram():
+    """Test filtering CRAM files."""
+    endings = CRAM_ENDINGS + CRAM_INDEX_ENDINGS
+    # Generic .cram files should match
+    assert filter_by_file_endings("s3://bucket/sample.cram", endings) is True
+    # HGV .cram files should match
+    assert filter_by_file_endings("s3://bucket/sample.hgv.cram", endings) is True
+    # Index files should match
+    assert filter_by_file_endings("s3://bucket/sample.cram.crai", endings) is True
+    # Non-CRAM files should not match
+    assert filter_by_file_endings("s3://bucket/sample.bam", endings) is False

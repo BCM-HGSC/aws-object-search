@@ -44,6 +44,7 @@ BAM_ENDINGS = [
 ]
 
 CRAM_ENDINGS = [
+    ".cram",
     ".hgv.cram",
 ]
 
