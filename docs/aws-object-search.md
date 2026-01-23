@@ -9,9 +9,11 @@ You must have:
 - Terminal access
 - The `search-aws` and `search.py` aliases available in your shell (these should not be suppressed)
 - Understanding of the following terms:
-  - [S3 bucket](https://en.wikipedia.org/wiki/Amazon_S3): Cloud storage container in AWS
-  - [TSV file](https://en.wikipedia.org/wiki/Tab-separated_values): Text file with data separated by tabs
-  - [Compressed file](https://en.wikipedia.org/wiki/Data_compression): File that has been reduced in size using compression algorithms (e.g., `.gz`, `.bz2`)
+  - basic & intermediate:
+    - [S3 bucket](https://en.wikipedia.org/wiki/Amazon_S3): Cloud storage container in AWS
+  - advanced:
+    - [TSV file](https://en.wikipedia.org/wiki/Tab-separated_values): Text file with data separated by tabs
+    - [Compressed file](https://en.wikipedia.org/wiki/Data_compression): File that has been reduced in size using compression algorithms (e.g., `.gz`, `.bz2`)
 
 ## Search Commands Overview
 
