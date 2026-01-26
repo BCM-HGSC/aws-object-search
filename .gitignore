@@ -5,5 +5,7 @@ __pycache__/
 .env
 .venv
 env
+merge.txt
+tag.txt
 venv
 /build/
