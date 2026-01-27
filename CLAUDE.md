@@ -106,24 +106,33 @@ Production uses versioned deployments via the `deploy` script:
 
 ## Release Management
 
+See `RELEASING.md` for full release procedures.
+
 ### Git Tag Style
 
-Use minimal, single-line tag messages for releases:
+Annotated Git tags are the authoritative source of release notes. Tags use a structured format:
+
+```
+Release vX.Y.Z
+
+Summary:
+<1–2 sentences describing the release>
+
+Changes:
+- <bullet 1>
+- <bullet 2>
+
+Notes:
+- <optional compatibility notes, deprecations>
+
+Commit: <SHA>
+Date: <ISO-8601>
+```
+
+Use the `git release` alias (defined in RELEASING.md) to create tags with a pre-filled template:
 
 ```bash
-git tag -a vX.Y.Z -m "Release vX.Y.Z: [One sentence on primary feature/focus]"
-```
-
-Rationale:
-- Tag serves as a commit pointer with minimal metadata
-- Detailed release notes are maintained in `release-notes/` directory as the canonical source
-- Avoids duplication between tag and release-notes
-- Faster to create consistently
-
-Example tag messages:
-```
-v1.0.0-rc2: Smart file type filtering for search results
-v1.0.0-rc1: Production-ready search tool with quality improvements
+git release vX.Y.Z
 ```
 
 ## File Handling Guidelines
