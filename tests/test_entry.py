@@ -41,6 +41,9 @@ def test_aos_scan_smoke(tmp_path):
         flock=None,
     )
     aos_scan(args)
+    # No buckets match the prefix, but an (empty) index is still built.
+    assert (tmp_path / "index" / "meta.json").is_file()
+    assert list(tmp_path.glob("*.tsv.gz")) == []
 
 
 # Tests for file locking
