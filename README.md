@@ -9,6 +9,8 @@ collection of S3 buckets.
 
 **SSH keys are recommended** for GitHub access. Everything gets easier with SSH authentication. If you refuse to use SSH, you will need a personal access token for the HTTPS URL.
 
+**[uv](https://docs.astral.sh/uv/) must be on your `PATH`.** It is needed to change dependencies or entry points, to keep `uv.lock` current, and to cut releases (`scripts/release-finalize.sh` runs `uv lock`). The `deploy` script installs its own copy of uv inside the deployment, so deploying does not depend on yours.
+
 For AWS operations, ensure you have:
 ```bash
 export AWS_PROFILE=scan-dev  # or appropriate profile
