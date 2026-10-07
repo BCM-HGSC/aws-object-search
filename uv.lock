@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.12"
 
 [[package]]
@@ -16,7 +16,7 @@ wheels = [
 
 [[package]]
 name = "aws-object-search"
-version = "1.0.0rc2+dev"
+version = "1.0.0rc3+dev"
 source = { editable = "." }
 dependencies = [
     { name = "boto3" },
@@ -36,7 +36,7 @@ requires-dist = [
     { name = "boto3" },
     { name = "gitlint", marker = "extra == 'dev'", specifier = ">=0.19" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.3" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.4" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.14" },
     { name = "tantivy" },
 ]
