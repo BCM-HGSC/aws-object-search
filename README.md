@@ -9,7 +9,7 @@ collection of S3 buckets.
 
 **SSH keys are recommended** for GitHub access. Everything gets easier with SSH authentication. If you refuse to use SSH, you will need a personal access token for the HTTPS URL.
 
-**[uv](https://docs.astral.sh/uv/) must be on your `PATH`.** It is needed to change dependencies or entry points, to keep `uv.lock` current, and to cut releases (`scripts/release-finalize.sh` runs `uv lock`). The `deploy` script installs its own copy of uv inside the deployment, so deploying does not depend on yours.
+**[uv](https://docs.astral.sh/uv/) must be on your `PATH`.** It manages the development environment, keeps `uv.lock` current, and is used to cut releases (`scripts/release-finalize.sh` runs `uv lock`). The `deploy` script installs its own copy of uv inside the deployment, so production deployments do not depend on yours.
 
 For AWS operations, ensure you have:
 ```bash
@@ -17,35 +17,27 @@ export AWS_PROFILE=scan-dev  # or appropriate profile
 aws sso login
 ```
 
-### Deployment
+### Environment
 
-Deploy the software for development:
+Create the development environment (`.venv` in the repo root, editable install with dev extras) and install the git hooks:
 ```bash
-./deploy
+uv sync --extra dev
+uv run pre-commit install --hook-type pre-commit --hook-type commit-msg
 ```
 
-This creates an `aws-object-search-dev` directory with the development environment and all dependencies already installed.
-
-For production deployments with a specific version:
-```bash
-VERSION=1.0.0
-git checkout v"$VERSION"
-./deploy "$VERSION"  # defaults to "dev" if not set
-```
-
-The `deploy` script ignores your home directory contents and most environment variables through the `scripts/sanitize-command` script.
+The `deploy` script is the production installer; see [deployment](#deployment).
 
 ## Testing
 
 ```bash
-# Run all tests
-./bin/pytest
+# Run all tests (integration tests are skipped)
+uv run pytest
 
 # Run specific test file
-./bin/pytest tests/test_catalog.py
+uv run pytest tests/test_catalog.py
 
-# Run integration tests (marked with @pytest.mark.integration)
-./bin/pytest -m integration
+# Also run integration tests (marked with @pytest.mark.integration; need AWS)
+uv run pytest --run-integration
 ```
 
 ## Tools
@@ -56,21 +48,25 @@ The `deploy` script ignores your home directory contents and most environment va
 
 ### Running Tools in Development
 
-There is a `bin/` directory in the project root with symlinks to executables:
+Run the entry points through `uv run`.
+In development, the default output root is `s3_objects/` in the repo root (ignored by git), because it is located relative to the environment (`.venv`).
 
 ```bash
 # Scan S3 buckets with prefix
-bin/aos-scan --bucket-prefix hgsc-b
+uv run aos-scan --bucket-prefix hgsc-b
 
 # Scan with file locking to prevent concurrent scans
-bin/aos-scan --flock path/to/lock/file
+uv run aos-scan --flock path/to/lock/file
 
 # Search the index
-bin/search-aws "search_term"
-bin/search.py input_file.txt
+uv run search-aws "search_term"
+uv run search.py input_file.txt
+
+# Search some other index, such as a test deployment's
+uv run search-aws -o path/to/s3_objects "search_term"
 
 # Code quality validation
-bin/ruff check PATH/TO/FILE
+uv run ruff check PATH/TO/FILE
 ```
 
 ## Technical Architecture
@@ -326,43 +322,12 @@ Currently there is no need for `AWS_OBJECT_SEARCH_CONFIG`, since we are locating
 
 ### development
 
-First create a directory that will contain:
-
-- the repo
-- the deployed software
-- the scan data
+Development does not use `deploy`; see [Development Setup](#development-setup).
+To test the production layout before a release, deploy into a scratch prefix:
 
 ```shell
-mkdir -p path/to/aws-object-search
-cd path/to/aws-object-search
-git clone git@github.com:BCM-HGSC/aws-object-search.git git
-# or use the https URL if you have set up push access that way
+./deploy -p "$SCRATCH" 1.0.0-test
+"$SCRATCH"/aws-object-search-1.0.0-test/bin/search-aws --version
 ```
 
-The filesystem will look like this:
-
-```
-aws-object-search/
-└── git/
-    ├── deploy
-    ├── docs/
-    ├── pyproject.toml
-    ├── README.md
-    ├── scripts/
-    ├── src/
-    └── tests/
-```
-
-After running "`cd path/to/aws-object-search/ && ./git/deploy`", the filesystem would look like this:
-
-```
-aws-object-search
-├── aws-object-search-dev/  (links to git directory via "-e" option)
-├── micromamba
-├── git/
-└── s3_objects/
-```
-
-The default suffix for the deployment directory is "-dev".
-Setting that suffix to a different value (such as "-1.0.0-rc1") will result in a deployment that is frozen.
-This is what happens in production.
+Any suffix other than "dev" results in a frozen (non-editable) installation, as in production.

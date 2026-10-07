@@ -4,14 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Setup
 
-Deploy the software for development:
+The development environment is a standard uv project (`.venv` in the repo root):
 ```bash
-./deploy
+uv sync --extra dev
+uv run pre-commit install --hook-type pre-commit --hook-type commit-msg
 ```
 
-This creates an `aws-object-search-dev` directory with the development environment and all dependencies already installed.
+Developers are expected to have `uv` on their `PATH`. Run `uv lock` whenever `pyproject.toml` changes and commit `uv.lock` with it.
 
-Developers are expected to have `uv` on their `PATH`. The `deploy` script installs its own copy inside the deployment, but `uv` is needed directly for dependency and entry point changes, for keeping `uv.lock` in sync with `pyproject.toml`, and for releases.
+`./deploy` is the production installer (micromamba + its own uv, versioned `aws-object-search-SUFFIX` directory). Do not use it for development; to test the production layout, deploy into a scratch prefix with `./deploy -p SCRATCH_DIR SUFFIX`.
 
 For AWS operations, ensure you have:
 ```bash
@@ -23,50 +24,37 @@ aws sso login
 
 ### Testing
 ```bash
-# Run all tests
-./bin/pytest
+# Run all tests (integration tests are skipped)
+uv run pytest
 
 # Run specific test file
-./bin/pytest tests/test_catalog.py
+uv run pytest tests/test_catalog.py
 
-# Run integration tests (marked with @pytest.mark.integration)
-./bin/pytest -m integration
-```
-
-### Updates in Development
-This is only necessary when changing entry points or dependencies:
-
-```bash
-# Install in development mode (editable)
-uv pip install --system -e ".[dev]"
-
-# Refresh the lock file after changing dependencies or the version
-uv lock
+# Also run integration tests (@pytest.mark.integration; need AWS)
+uv run pytest --run-integration
 ```
 
 ### Running the Tools in Development
-There is a symlink in the project root named `env` that points to the devault development environment at `../aws-object-search-dev`.
-There is a `bin` in the project root with symlinks to executables in `env/bin/`.
-
+The default output root is `s3_objects/` beside the environment, i.e. in the repo root (gitignored).
 
 ```bash
 # Scan S3 buckets with prefix
-bin/aos-scan --bucket-prefix hgsc-b
+uv run aos-scan --bucket-prefix hgsc-b
 
 # Scan with file locking to prevent concurrent scans
-bin/aos-scan --bucket-prefix hgsc-b --flock /path/to/lock/file
+uv run aos-scan --bucket-prefix hgsc-b --flock /path/to/lock/file
 
 # Search the index
-bin/search-aws query_string
-bin/search.py input_file.txt
+uv run search-aws query_string
+uv run search.py input_file.txt
 
 # Search with file type filtering
-bin/search-aws query_string --raw-reads  # Only FASTQ files
-bin/search-aws query_string --all        # All results, no filtering
-bin/search-aws query_string -gprv        # Configs, mapped-reads, raw-reads, VCF (default)
+uv run search-aws query_string --raw-reads  # Only FASTQ files
+uv run search-aws query_string --all        # All results, no filtering
+uv run search-aws query_string -gprv        # Configs, mapped-reads, raw-reads, VCF (default)
 
-# Using ruff to check PATH/TO/FILE
-bin/ruff check PATH/TO/FILE
+# Lint
+uv run ruff check PATH/TO/FILE
 ```
 
 ## Architecture Overview
