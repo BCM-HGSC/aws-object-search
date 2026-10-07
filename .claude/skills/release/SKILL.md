@@ -1,3 +1,10 @@
+---
+name: release
+description: Generate release notes, tag, and publish a GitHub release for a given version
+argument-hint: VERSION
+disable-model-invocation: true
+---
+
 # Release
 
 Create a new release with auto-generated release notes.
