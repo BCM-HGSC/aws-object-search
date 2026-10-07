@@ -7,12 +7,12 @@
 #
 # Performs all deterministic release steps:
 # 1. Copies release notes into release-notes/ if needed
-# 2. Updates version in pyproject.toml
+# 2. Updates version in pyproject.toml and uv.lock
 # 3. Commits release notes and version bump
 # 4. Creates annotated git tag
 # 5. Pushes release commit and tag atomically
 # 6. Creates GitHub release (pre-release for -rc, -alpha, -beta)
-# 7. Bumps version to +dev
+# 7. Bumps version to +dev in pyproject.toml and uv.lock
 # 8. Commits and pushes
 
 set -euo pipefail
@@ -41,6 +41,8 @@ fail() {
     echo "Error: $*" >&2
     exit 1
 }
+
+command -v uv >/dev/null || fail "uv is required to update uv.lock"
 
 CURRENT_BRANCH=$(git branch --show-current)
 if [[ "$CURRENT_BRANCH" != "$RELEASE_BRANCH" ]]; then
@@ -79,10 +81,11 @@ fi
 echo "Step 2: Updating version to $VERSION in pyproject.toml"
 sed -i.bak "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
 rm -f pyproject.toml.bak
+uv lock --quiet
 
 # Step 3: Commit release notes and version bump
 echo "Step 3: Committing release notes and version bump"
-git add "$NOTES_DEST" pyproject.toml
+git add "$NOTES_DEST" pyproject.toml uv.lock
 git commit -m "Bump version to $VERSION"
 
 # Step 4: Create annotated tag
@@ -128,10 +131,11 @@ fi
 echo "Step 7: Bumping version to ${VERSION}+dev"
 sed -i.bak "s/^version = \".*\"/version = \"${VERSION}+dev\"/" pyproject.toml
 rm -f pyproject.toml.bak
+uv lock --quiet
 
 # Step 8: Commit and push
 echo "Step 8: Committing and pushing +dev version"
-git add pyproject.toml
+git add pyproject.toml uv.lock
 git commit -m "Bump version to ${VERSION}+dev"
 git push origin "$RELEASE_BRANCH"
 
