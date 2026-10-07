@@ -1,8 +1,15 @@
 """Test version functionality."""
 
 import subprocess
+import sys
+from pathlib import Path
+
+import pytest
 
 from aws_object_search import __version__
+
+# Entry points are installed next to the interpreter running the tests.
+SCRIPTS_DIR = Path(sys.executable).parent
 
 
 def test_version_import():
@@ -12,40 +19,14 @@ def test_version_import():
     assert len(__version__) > 0
 
 
-def test_aos_scan_version():
-    """Test aos-scan --version command."""
+@pytest.mark.parametrize("command", ["aos-scan", "search-aws", "search.py"])
+def test_entry_point_version(command):
+    """Test that each entry point reports its name and version."""
     result = subprocess.run(
-        ["bin/aos-scan", "--version"],
+        [str(SCRIPTS_DIR / command), "--version"],
         capture_output=True,
         text=True,
-        cwd="/Users/hale/Documents/dev/repo/aws-object-search/aos-repo",
     )
     assert result.returncode == 0
     assert __version__ in result.stdout
-    assert "aos-scan" in result.stdout
-
-
-def test_search_aws_version():
-    """Test search-aws --version command."""
-    result = subprocess.run(
-        ["bin/search-aws", "--version"],
-        capture_output=True,
-        text=True,
-        cwd="/Users/hale/Documents/dev/repo/aws-object-search/aos-repo",
-    )
-    assert result.returncode == 0
-    assert __version__ in result.stdout
-    assert "search-aws" in result.stdout
-
-
-def test_search_py_version():
-    """Test search.py --version command."""
-    result = subprocess.run(
-        ["bin/search.py", "--version"],
-        capture_output=True,
-        text=True,
-        cwd="/Users/hale/Documents/dev/repo/aws-object-search/aos-repo",
-    )
-    assert result.returncode == 0
-    assert __version__ in result.stdout
-    assert "search.py" in result.stdout
+    assert command in result.stdout
