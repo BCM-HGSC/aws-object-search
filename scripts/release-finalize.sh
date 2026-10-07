@@ -51,12 +51,7 @@ rm -f pyproject.toml.bak
 # Step 3: Commit release notes and version bump
 echo "Step 3: Committing release notes and version bump"
 git add "$NOTES_DEST" pyproject.toml
-git commit -m "$(cat <<EOF
-Bump version to $VERSION
-
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
-EOF
-)"
+git commit -m "Bump version to $VERSION"
 
 # Step 4: Create annotated tag
 echo "Step 4: Creating annotated tag $TAG"
@@ -104,12 +99,7 @@ rm -f pyproject.toml.bak
 # Step 8: Commit and push
 echo "Step 8: Committing and pushing +dev version"
 git add pyproject.toml
-git commit -m "$(cat <<EOF
-Bump version to ${VERSION}+dev
-
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
-EOF
-)"
+git commit -m "Bump version to ${VERSION}+dev"
 git push
 
 echo ""
