@@ -11,7 +11,7 @@ Deploy the software for development:
 
 This creates an `aws-object-search-dev` directory with the development environment and all dependencies already installed.
 
-Although the `deploy` script uses `uv`, there is no need for developers to use `uv` unless they are changing entry points or dependencies.
+Developers are expected to have `uv` on their `PATH`. The `deploy` script installs its own copy inside the deployment, but `uv` is needed directly for dependency and entry point changes, for keeping `uv.lock` in sync with `pyproject.toml`, and for releases.
 
 For AWS operations, ensure you have:
 ```bash
@@ -39,6 +39,9 @@ This is only necessary when changing entry points or dependencies:
 ```bash
 # Install in development mode (editable)
 uv pip install --system -e ".[dev]"
+
+# Refresh the lock file after changing dependencies or the version
+uv lock
 ```
 
 ### Running the Tools in Development
@@ -107,6 +110,8 @@ Production uses versioned deployments via the `deploy` script:
 ## Release Management
 
 See `RELEASING.md` for full release procedures.
+
+The `/release VERSION` skill (`.claude/skills/release/`) automates a release: it drafts notes into `release-notes/`, waits for approval, then runs `scripts/release-finalize.sh`. Run it from a clean, up-to-date `main`.
 
 ### Git Tag Style
 
