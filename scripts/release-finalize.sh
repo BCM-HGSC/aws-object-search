@@ -6,13 +6,14 @@
 # clean working tree, in sync with origin. Checks these before starting.
 #
 # Performs all deterministic release steps:
-# 1. Updates version in pyproject.toml
-# 2. Commits release notes and version bump
-# 3. Creates annotated git tag
-# 4. Pushes tag to origin
-# 5. Creates GitHub pre-release
-# 6. Bumps version to +dev
-# 7. Commits and pushes
+# 1. Copies release notes into release-notes/ if needed
+# 2. Updates version in pyproject.toml
+# 3. Commits release notes and version bump
+# 4. Creates annotated git tag
+# 5. Pushes release commit and tag atomically
+# 6. Creates GitHub release (pre-release for -rc, -alpha, -beta)
+# 7. Bumps version to +dev
+# 8. Commits and pushes
 
 set -euo pipefail
 
@@ -110,16 +111,17 @@ Date: $COMMIT_DATE
 EOF
 )"
 
-# Step 5: Push tag to origin
-echo "Step 5: Pushing tag to origin"
-git push origin "$TAG"
+# Step 5: Push release commit and tag together, so the remote never has
+# one without the other
+echo "Step 5: Pushing $RELEASE_BRANCH and $TAG to origin"
+git push --atomic origin "$RELEASE_BRANCH" "$TAG"
 
-# Step 6: Create GitHub pre-release
-echo "Step 6: Creating GitHub pre-release"
+# Step 6: Create GitHub release (pre-release for -rc, -alpha, -beta)
+echo "Step 6: Creating GitHub release"
 if [[ "$VERSION" == *"-rc"* ]] || [[ "$VERSION" == *"-alpha"* ]] || [[ "$VERSION" == *"-beta"* ]]; then
-    gh release create "$TAG" --prerelease --title "$TAG" --notes-file "$NOTES_DEST"
+    gh release create "$TAG" --verify-tag --prerelease --title "$TAG" --notes-file "$NOTES_DEST"
 else
-    gh release create "$TAG" --title "$TAG" --notes-file "$NOTES_DEST"
+    gh release create "$TAG" --verify-tag --title "$TAG" --notes-file "$NOTES_DEST"
 fi
 
 # Step 7: Bump version to +dev

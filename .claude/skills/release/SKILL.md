@@ -89,13 +89,18 @@ Once approved, run the finalization script:
 ```
 
 This script will:
-1. Update version in pyproject.toml
-2. Commit the release notes and version bump
-3. Create an annotated git tag
-4. Push the tag to origin
-5. Create a GitHub release (pre-release if version contains -rc, -alpha, or -beta)
-6. Bump version to +dev
-7. Commit and push the +dev version
+1. Refuse to start unless on `main` (or `$RELEASE_BRANCH`), clean, and in sync with origin
+2. Update version in pyproject.toml
+3. Commit the release notes and version bump
+4. Create an annotated git tag
+5. Push the release commit and tag to origin atomically
+6. Create a GitHub release (pre-release if version contains -rc, -alpha, or -beta)
+7. Bump version to +dev
+8. Commit and push the +dev version
+
+If the script stops at its preflight checks, report the error to the user
+and stop. Do not try to work around it (switching branches, stashing,
+pulling) without the user's direction.
 
 ### Step 5: Report Completion
 
