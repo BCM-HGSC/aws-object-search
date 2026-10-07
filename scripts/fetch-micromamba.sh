@@ -17,7 +17,7 @@ case "$arch" in
         URL=https://micro.mamba.pm/api/micromamba/linux-64/latest
         MESSAGE="Running on Linux x86_64"
         ;;
-    "Linux arm64")
+    "Linux aarch64")
         URL=https://micro.mamba.pm/api/micromamba/linux-aarch64/latest
         MESSAGE="Running on Linux ARM64"
         ;;
