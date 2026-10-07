@@ -55,8 +55,9 @@ class BucketScan:
     @property
     def bucket_name(self) -> str:
         "Return name of the bucket, parsed from file_path."
-        # Can't use stem, because it only removes the last suffix.
-        return self.file_path.stem.split(".", 1)[0].split("-", 2)[2]
+        # Bucket names may contain ".", so strip only the known suffixes.
+        name = self.file_path.name.removesuffix(".gz").removesuffix(".tsv")
+        return name.split("-", 2)[2]
 
     @property
     def scan_start(self) -> datetime:
@@ -228,7 +229,7 @@ def flatten(value):
         case datetime():
             return value.isoformat()
         case str():
-            if value[0] == value[-1] == '"':
+            if len(value) >= 2 and value[0] == value[-1] == '"':
                 return value[1:-1]
             else:
                 return value
