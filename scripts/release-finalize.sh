@@ -2,6 +2,9 @@
 # Finalizes a release after release notes have been approved
 # Usage: release-finalize.sh VERSION RELEASE_NOTES_FILE
 #
+# Must be run on the release branch (main, or $RELEASE_BRANCH) with a
+# clean working tree, in sync with origin. Checks these before starting.
+#
 # Performs all deterministic release steps:
 # 1. Updates version in pyproject.toml
 # 2. Commits release notes and version bump
@@ -30,6 +33,34 @@ fi
 
 TAG="v${VERSION}"
 NOTES_DEST="release-notes/${TAG}.md"
+RELEASE_BRANCH="${RELEASE_BRANCH:-main}"
+
+# Preflight: verify repository state before changing anything
+fail() {
+    echo "Error: $*" >&2
+    exit 1
+}
+
+CURRENT_BRANCH=$(git branch --show-current)
+if [[ "$CURRENT_BRANCH" != "$RELEASE_BRANCH" ]]; then
+    fail "on branch '${CURRENT_BRANCH:-detached HEAD}', expected '$RELEASE_BRANCH'" \
+        "(set RELEASE_BRANCH to override)"
+fi
+
+# Tracked changes other than the release notes would leak into the commit
+DIRTY=$(git status --porcelain --untracked-files=no | grep -v -F " $NOTES_DEST" || true)
+if [[ -n "$DIRTY" ]]; then
+    fail "working tree has uncommitted changes:"$'\n'"$DIRTY"
+fi
+
+if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+    fail "tag $TAG already exists"
+fi
+
+git fetch --quiet origin "$RELEASE_BRANCH"
+if [[ "$(git rev-parse HEAD)" != "$(git rev-parse "origin/$RELEASE_BRANCH")" ]]; then
+    fail "$RELEASE_BRANCH is not in sync with origin/$RELEASE_BRANCH"
+fi
 
 echo "=== Release Finalization for $TAG ==="
 echo ""
@@ -100,7 +131,7 @@ rm -f pyproject.toml.bak
 echo "Step 8: Committing and pushing +dev version"
 git add pyproject.toml
 git commit -m "Bump version to ${VERSION}+dev"
-git push
+git push origin "$RELEASE_BRANCH"
 
 echo ""
 echo "=== Release $TAG Complete ==="
