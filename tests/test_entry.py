@@ -694,3 +694,18 @@ def test_filter_by_file_endings_cram():
     assert filter_by_file_endings("s3://bucket/sample.cram.crai", endings) is True
     # Non-CRAM files should not match
     assert filter_by_file_endings("s3://bucket/sample.bam", endings) is False
+
+
+def test_filter_by_file_endings_bam_endings():
+    """Test filtering with BAM_ENDINGS, including generic .bam files."""
+    endings = BAM_ENDINGS + BAM_INDEX_ENDINGS
+    # Generic .bam files should match
+    assert filter_by_file_endings("s3://bucket/sample.bam", endings) is True
+    # Realigned and HGV .bam files should match
+    assert filter_by_file_endings("s3://bucket/s_realigned.bam", endings) is True
+    assert filter_by_file_endings("s3://bucket/sample.hgv.bam", endings) is True
+    # Index files should match
+    assert filter_by_file_endings("s3://bucket/sample.bam.bai", endings) is True
+    # Non-BAM files should not match
+    assert filter_by_file_endings("s3://bucket/sample.cram", endings) is False
+    assert filter_by_file_endings("s3://bucket/sample.bam.md5", endings) is False

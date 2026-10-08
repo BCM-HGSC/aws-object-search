@@ -37,6 +37,7 @@ CONFIG_ENDINGS = [
 ]
 
 BAM_ENDINGS = [
+    ".bam",
     "_realigned.bam",
     ".realigned.recal.bam",
     ".recal.realigned.bam",
