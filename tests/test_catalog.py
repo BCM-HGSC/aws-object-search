@@ -1,9 +1,10 @@
 import csv
-from pathlib import PurePosixPath
+from datetime import datetime
+from pathlib import Path, PurePosixPath
 
-from pytest import fixture
+from pytest import fixture, mark
 
-from aws_object_search.catalog import S3ObjectCatalog
+from aws_object_search.catalog import BucketScan, S3ObjectCatalog, flatten
 
 
 @fixture
@@ -286,3 +287,35 @@ def test_archive_no_old_scans(tmp_path) -> None:
     # No archive directory should be created
     archive_root = test_catalog_root / "archive"
     assert not archive_root.exists()
+
+
+@mark.parametrize(
+    "file_name, bucket_name",
+    [
+        ("20250503-164831-hgsc-a-1-2-3.tsv", "hgsc-a-1-2-3"),
+        ("20250503-164831-hgsc-a-1-2-3.tsv.gz", "hgsc-a-1-2-3"),
+        ("20250503-164831-my.dotted.bucket.tsv", "my.dotted.bucket"),
+        ("20250503-164831-my.dotted.bucket.tsv.gz", "my.dotted.bucket"),
+    ],
+)
+def test_bucket_scan_bucket_name(file_name, bucket_name) -> None:
+    "Bucket name is parsed from the file name, including names with dots."
+    assert BucketScan(Path(file_name)).bucket_name == bucket_name
+
+
+@mark.parametrize(
+    "value, expected",
+    [
+        ("", ""),
+        ('"', '"'),
+        ('""', ""),
+        ('"abc123"', "abc123"),
+        ("plain", "plain"),
+        (["SHA256", "CRC32"], "SHA256:CRC32"),
+        (datetime(2025, 5, 3, 16, 48, 31), "2025-05-03T16:48:31"),
+        (100, "100"),
+    ],
+)
+def test_flatten(value, expected) -> None:
+    "flatten() converts S3 object values to str, stripping ETag quotes."
+    assert flatten(value) == expected

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Install micromamba in $PWD/conda/envs/base/bin/micromamba.
+# Install micromamba in $PWD/micromamba.
 
 set -euo pipefail
 
@@ -15,11 +15,11 @@ arch=$(/usr/bin/uname -sm)
 case "$arch" in
     "Linux x86_64")
         URL=https://micro.mamba.pm/api/micromamba/linux-64/latest
-        MESSAGE="Running on Linux x86_64"
+        MESSAGE="Running on Linux Intel/AMD (x86_64)"
         ;;
-    "Linux arm64")
+    "Linux aarch64")
         URL=https://micro.mamba.pm/api/micromamba/linux-aarch64/latest
-        MESSAGE="Running on Linux ARM64"
+        MESSAGE="Running on Linux ARM64 (aarch64)"
         ;;
     "Linux ppc64le")
         URL=https://micro.mamba.pm/api/micromamba/linux-ppc64le/latest

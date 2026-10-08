@@ -1,8 +1,12 @@
 import argparse
 import fcntl
+import io
+import logging
 import multiprocessing
 import time
+from shutil import copytree
 
+import boto3
 import pytest
 
 from aws_object_search.entry import (
@@ -17,7 +21,14 @@ from aws_object_search.entry import (
     aos_scan,
     build_file_endings_filter,
     filter_by_file_endings,
+    search_aws,
+    search_py,
 )
+from aws_object_search.tantivy_wrapper import index_catalog
+
+# Objects in simple_catalog: 2 FASTQs and 1 event.json per sample
+SAMPLE_0076 = "Sample_HY2L7DSX2-3-IDUDI0076"
+SAMPLE_0003 = "Sample_H575JDSXX-1-IDUDI0003"
 
 
 @pytest.mark.integration
@@ -32,6 +43,27 @@ def test_aos_scan_smoke(tmp_path):
         flock=None,
     )
     aos_scan(args)
+    # No buckets match the prefix, but an (empty) index is still built.
+    assert (tmp_path / "index" / "meta.json").is_file()
+    assert list(tmp_path.glob("*.tsv.gz")) == []
+
+
+def test_aos_scan_unknown_profile(tmp_path, monkeypatch, caplog):
+    """An unknown AWS profile exits 1 with an error instead of a traceback."""
+    monkeypatch.setenv("AWS_PROFILE", "no-such-profile-for-tests")
+    monkeypatch.setattr(boto3, "DEFAULT_SESSION", None)
+    args = argparse.Namespace(
+        bucket_prefix=None,
+        output_root=tmp_path,
+        log_level="ERROR",
+        no_scan=False,
+        no_index=True,
+        flock=None,
+    )
+    with caplog.at_level(logging.ERROR), pytest.raises(SystemExit) as exc_info:
+        aos_scan(args)
+    assert exc_info.value.code == 1
+    assert "AWS credentials are not configured" in caplog.text
 
 
 # Tests for file locking
@@ -176,6 +208,148 @@ def test_aos_scan_concurrent_blocking(tmp_path):
         process1.terminate()
     if process2.is_alive():
         process2.terminate()
+
+
+# Tests for search_aws and search.py
+
+
+@pytest.fixture
+def output_root(tmp_path, simple_catalog_path):
+    "Output root holding a copy of simple_catalog and its index."
+    root = tmp_path / "s3_objects"
+    copytree(simple_catalog_path, root)
+    index_catalog(root, root / "index")
+    return root
+
+
+@pytest.fixture
+def search_args(output_root):
+    "Factory for search argument namespaces with CLI defaults."
+
+    def make(**overrides):
+        defaults = {
+            "output_root": output_root,
+            "max_results_per_query": 10_000_000,
+            "uri_only": False,
+            "log_level": "WARNING",
+            "all": False,
+            "raw_reads": False,
+            "mapped_reads": False,
+            "bam": False,
+            "cram": False,
+            "vcf": False,
+            "configs": False,
+            "no_index": False,
+        }
+        return argparse.Namespace(**(defaults | overrides))
+
+    return make
+
+
+@pytest.fixture
+def fake_stderr(monkeypatch):
+    "search_aws closes stderr, so give it one of its own."
+    fake = io.StringIO()
+    monkeypatch.setattr("aws_object_search.entry.stderr", fake)
+    return fake
+
+
+def run_search_aws(args, capsys) -> list[str]:
+    "Run search_aws, check that it exits 0, and return its stdout lines."
+    with pytest.raises(SystemExit) as exc_info:
+        search_aws(args)
+    assert exc_info.value.code == 0
+    return capsys.readouterr().out.splitlines()
+
+
+def test_search_aws_default_output(search_args, fake_stderr, capsys):
+    """Default output is TSV of URI, size, last_modified, storage_class."""
+    lines = run_search_aws(search_args(query="IDUDI0076"), capsys)
+    assert len(lines) == 3
+    by_uri = {line.split("\t")[0]: line.split("\t") for line in lines}
+    event_uri = f"s3://hgsc-b123/v1/illumina/wex/fastqs/{SAMPLE_0076}/event.json"
+    assert by_uri[event_uri] == [
+        event_uri,
+        "2271",
+        "2025-03-31T01:39:09+00:00",
+        "DEEP_ARCHIVE",
+    ]
+
+
+def test_search_aws_uri_only(search_args, fake_stderr, capsys):
+    """--uri-only prints just S3 URIs."""
+    lines = run_search_aws(search_args(query="IDUDI0076", uri_only=True), capsys)
+    assert len(lines) == 3
+    assert all(line.startswith("s3://hgsc-b123/") for line in lines)
+    assert all("\t" not in line for line in lines)
+
+
+def test_search_aws_type_filter(search_args, fake_stderr, capsys):
+    """--raw-reads keeps FASTQs and drops event.json."""
+    args = search_args(query="IDUDI0076", uri_only=True, raw_reads=True)
+    lines = run_search_aws(args, capsys)
+    assert len(lines) == 2
+    assert all(line.endswith(".fastq.gz") for line in lines)
+
+
+def test_search_aws_no_match(search_args, fake_stderr, capsys):
+    """A query with no matches prints nothing and still exits 0."""
+    assert run_search_aws(search_args(query="NOSUCHTERM"), capsys) == []
+
+
+def test_search_py_output_files(tmp_path, search_args):
+    """search.py writes results, summary, and not-found files."""
+    terms_file = tmp_path / "terms.txt"
+    terms_file.write_text("IDUDI0076\n\nIDUDI0003\nNOSUCHTERM\n")
+    with pytest.raises(SystemExit) as exc_info:
+        search_py(search_args(file=str(terms_file), uri_only=True))
+    assert exc_info.value.code == 0
+
+    out_lines = (tmp_path / "terms.txt.out.tsv").read_text().splitlines()
+    assert len(out_lines) == 6
+    assert sum(SAMPLE_0076 in line for line in out_lines) == 3
+    assert sum(SAMPLE_0003 in line for line in out_lines) == 3
+
+    info = (tmp_path / "terms.txt.out.info").read_text()
+    assert "# Total search terms: 3\n" in info
+    assert "IDUDI0076\t3 matches\n" in info
+    assert "IDUDI0003\t3 matches\n" in info
+    assert "NOSUCHTERM\t0 matches\n" in info
+    assert "# Total matches found: 6\n" in info
+    assert "# Terms with no matches: 1\n" in info
+
+    not_found = (tmp_path / "terms.txt.not_found.txt").read_text()
+    assert not_found == "NOSUCHTERM\t0 matches\n"
+    not_found_list = (tmp_path / "terms.txt.not_found.list").read_text()
+    assert not_found_list == "NOSUCHTERM\n"
+
+
+def test_search_py_missing_input(tmp_path, search_args):
+    """A missing input file exits 1."""
+    with pytest.raises(SystemExit) as exc_info:
+        search_py(search_args(file=str(tmp_path / "missing.txt")))
+    assert exc_info.value.code == 1
+
+
+def test_search_aws_missing_index(tmp_path, search_args, caplog):
+    """A missing index exits 1 with an error instead of a traceback."""
+    args = search_args(query="IDUDI0076", output_root=tmp_path / "missing")
+    with caplog.at_level(logging.ERROR), pytest.raises(SystemExit) as exc_info:
+        search_aws(args)
+    assert exc_info.value.code == 1
+    assert "No search index found" in caplog.text
+
+
+def test_search_py_missing_index(tmp_path, search_args, caplog):
+    """search.py also exits 1 on a missing index, before writing output."""
+    terms_file = tmp_path / "terms.txt"
+    terms_file.write_text("IDUDI0076\n")
+    args = search_args(file=str(terms_file), output_root=tmp_path / "missing")
+    with caplog.at_level(logging.ERROR), pytest.raises(SystemExit) as exc_info:
+        search_py(args)
+    assert exc_info.value.code == 1
+    assert "No search index found" in caplog.text
+    assert not (tmp_path / "terms.txt.out.tsv").exists()
 
 
 # Tests for build_file_endings_filter
@@ -520,3 +694,43 @@ def test_filter_by_file_endings_cram():
     assert filter_by_file_endings("s3://bucket/sample.cram.crai", endings) is True
     # Non-CRAM files should not match
     assert filter_by_file_endings("s3://bucket/sample.bam", endings) is False
+
+
+def test_filter_by_file_endings_bam_endings():
+    """Test filtering with BAM_ENDINGS, including generic .bam files."""
+    endings = BAM_ENDINGS + BAM_INDEX_ENDINGS
+    # Generic .bam files should match
+    assert filter_by_file_endings("s3://bucket/sample.bam", endings) is True
+    # Realigned and HGV .bam files should match
+    assert filter_by_file_endings("s3://bucket/s_realigned.bam", endings) is True
+    assert filter_by_file_endings("s3://bucket/sample.hgv.bam", endings) is True
+    # Index files should match
+    assert filter_by_file_endings("s3://bucket/sample.bam.bai", endings) is True
+    # Non-BAM files should not match
+    assert filter_by_file_endings("s3://bucket/sample.cram", endings) is False
+    assert filter_by_file_endings("s3://bucket/sample.bam.md5", endings) is False
+
+
+@pytest.mark.parametrize(
+    "file_name, expected",
+    [
+        # DRAGEN outputs from issue #39: data files and indexes both match
+        ("S_1.hard-filtered.vcf.gz", True),
+        ("S_1.hard-filtered.vcf.gz.tbi", True),
+        ("S_1.hard-filtered.gvcf.gz", True),
+        ("S_1.hard-filtered.gvcf.gz.tbi", True),
+        ("S_1.cnv_sv.vcf.gz", True),
+        ("S_1.sv.vcf.gz", True),
+        # Legacy names still match
+        ("sample.SNPs_Annotated.vcf", True),
+        ("sample_snp.vcf.gz", True),
+        # Checksums and metrics do not
+        ("S_1.hard-filtered.vcf.gz.md5sum", False),
+        ("S_1.gvcf_metrics.csv", False),
+    ],
+)
+def test_filter_by_file_endings_vcf_endings(file_name, expected):
+    """Test filtering with VCF_ENDINGS, including generic .vcf.gz files."""
+    endings = VCF_ENDINGS + VCF_INDEX_ENDINGS
+    uri = f"s3://bucket/dragen/{file_name}"
+    assert filter_by_file_endings(uri, endings) is expected

@@ -4,8 +4,8 @@ __pycache__/
 *.pyc
 .env
 .venv
-env
 merge.txt
 tag.txt
 venv
 /build/
+/s3_objects/
