@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Install micromamba in $PWD/conda/envs/base/bin/micromamba.
+# Install micromamba in $PWD/micromamba.
 
 set -euo pipefail
 
