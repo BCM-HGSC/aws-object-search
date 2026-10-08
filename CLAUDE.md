@@ -12,7 +12,7 @@ uv run pre-commit install --hook-type pre-commit --hook-type commit-msg
 
 Developers are expected to have `uv` on their `PATH`. Run `uv lock` whenever `pyproject.toml` changes and commit `uv.lock` with it.
 
-`./deploy` is the production installer (micromamba + its own uv, versioned `aws-object-search-SUFFIX` directory). Do not use it for development; to test the production layout, deploy into a scratch prefix with `./deploy -p SCRATCH_DIR SUFFIX`.
+`./deploy` is the production installer (micromamba + its own uv, versioned `aws-object-search-SUFFIX` directory). It installs the dependency versions pinned in `uv.lock`, so production runs what was tested. Do not use it for development; to test the production layout, deploy into a scratch prefix with `./deploy -p SCRATCH_DIR SUFFIX`.
 
 For AWS operations, ensure you have:
 ```bash
