@@ -1,10 +1,12 @@
 import argparse
 import fcntl
 import io
+import logging
 import multiprocessing
 import time
 from shutil import copytree
 
+import boto3
 import pytest
 
 from aws_object_search.entry import (
@@ -44,6 +46,24 @@ def test_aos_scan_smoke(tmp_path):
     # No buckets match the prefix, but an (empty) index is still built.
     assert (tmp_path / "index" / "meta.json").is_file()
     assert list(tmp_path.glob("*.tsv.gz")) == []
+
+
+def test_aos_scan_unknown_profile(tmp_path, monkeypatch, caplog):
+    """An unknown AWS profile exits 1 with an error instead of a traceback."""
+    monkeypatch.setenv("AWS_PROFILE", "no-such-profile-for-tests")
+    monkeypatch.setattr(boto3, "DEFAULT_SESSION", None)
+    args = argparse.Namespace(
+        bucket_prefix=None,
+        output_root=tmp_path,
+        log_level="ERROR",
+        no_scan=False,
+        no_index=True,
+        flock=None,
+    )
+    with caplog.at_level(logging.ERROR), pytest.raises(SystemExit) as exc_info:
+        aos_scan(args)
+    assert exc_info.value.code == 1
+    assert "AWS credentials are not configured" in caplog.text
 
 
 # Tests for file locking
@@ -309,6 +329,27 @@ def test_search_py_missing_input(tmp_path, search_args):
     with pytest.raises(SystemExit) as exc_info:
         search_py(search_args(file=str(tmp_path / "missing.txt")))
     assert exc_info.value.code == 1
+
+
+def test_search_aws_missing_index(tmp_path, search_args, caplog):
+    """A missing index exits 1 with an error instead of a traceback."""
+    args = search_args(query="IDUDI0076", output_root=tmp_path / "missing")
+    with caplog.at_level(logging.ERROR), pytest.raises(SystemExit) as exc_info:
+        search_aws(args)
+    assert exc_info.value.code == 1
+    assert "No search index found" in caplog.text
+
+
+def test_search_py_missing_index(tmp_path, search_args, caplog):
+    """search.py also exits 1 on a missing index, before writing output."""
+    terms_file = tmp_path / "terms.txt"
+    terms_file.write_text("IDUDI0076\n")
+    args = search_args(file=str(terms_file), output_root=tmp_path / "missing")
+    with caplog.at_level(logging.ERROR), pytest.raises(SystemExit) as exc_info:
+        search_py(args)
+    assert exc_info.value.code == 1
+    assert "No search index found" in caplog.text
+    assert not (tmp_path / "terms.txt.out.tsv").exists()
 
 
 # Tests for build_file_endings_filter

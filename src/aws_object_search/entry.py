@@ -104,6 +104,12 @@ def aos_scan(args: argparse.Namespace | None = None) -> None:
             except botocore.exceptions.TokenRetrievalError as e:
                 logger.error(f"Failed to retrieve S3 buckets: {e}")
                 exit("Possibly not logged in")
+            except (
+                botocore.exceptions.ProfileNotFound,
+                botocore.exceptions.NoCredentialsError,
+            ) as e:
+                logger.error(f"AWS credentials are not configured: {e}")
+                exit(1)
             else:
                 logger.info("Scan completed successfully.")
         if not args.no_index:
@@ -178,14 +184,13 @@ def search_aws(args: argparse.Namespace | None = None) -> None:
     logger.info(f"Query string: '{args.query}'")
 
     warn_about_flag_conflicts(args)
+    index_path = require_index(args.output_root)
 
     # Build file endings filter based on command-line args
     file_endings = build_file_endings_filter(args)
 
     try:
-        results = run_query(
-            args.output_root / "index", args.query, args.max_results_per_query
-        )
+        results = run_query(index_path, args.query, args.max_results_per_query)
 
         for _score, doc in results:
             s3_uri = f"s3://{doc.bucket_name}/{doc.key}"
@@ -276,6 +281,7 @@ def search_py(args: argparse.Namespace | None = None) -> None:
     logger.info(f"Input file: '{args.file}'")
 
     warn_about_flag_conflicts(args)
+    index_path = require_index(args.output_root)
 
     # Build file endings filter based on command-line args
     file_endings = build_file_endings_filter(args)
@@ -319,9 +325,7 @@ def search_py(args: argparse.Namespace | None = None) -> None:
                 logger.info(f"Searching for: '{term}'")
                 try:
                     results = list(
-                        run_query(
-                            args.output_root / "index", term, args.max_results_per_query
-                        )
+                        run_query(index_path, term, args.max_results_per_query)
                     )
 
                     if results:
@@ -649,6 +653,18 @@ def record_not_found_term(
     not_found_file.write(f"{term}\t0 matches\n")
     not_found_list_file.write(f"{term}\n")
     info_file.write(f"{term}\t0 matches\n")
+
+
+def require_index(output_root: Path) -> Path:
+    "Return the index path under output_root, or exit 1 if there is no index."
+    index_path = output_root / "index"
+    if not (index_path / "meta.json").is_file():
+        logger.error(
+            f"No search index found at {index_path}. Check --output-root "
+            "(it must be a directory created by aos-scan)."
+        )
+        exit(1)
+    return index_path
 
 
 def warn_about_flag_conflicts(args: argparse.Namespace) -> None:
