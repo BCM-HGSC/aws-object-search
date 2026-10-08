@@ -709,3 +709,28 @@ def test_filter_by_file_endings_bam_endings():
     # Non-BAM files should not match
     assert filter_by_file_endings("s3://bucket/sample.cram", endings) is False
     assert filter_by_file_endings("s3://bucket/sample.bam.md5", endings) is False
+
+
+@pytest.mark.parametrize(
+    "file_name, expected",
+    [
+        # DRAGEN outputs from issue #39: data files and indexes both match
+        ("S_1.hard-filtered.vcf.gz", True),
+        ("S_1.hard-filtered.vcf.gz.tbi", True),
+        ("S_1.hard-filtered.gvcf.gz", True),
+        ("S_1.hard-filtered.gvcf.gz.tbi", True),
+        ("S_1.cnv_sv.vcf.gz", True),
+        ("S_1.sv.vcf.gz", True),
+        # Legacy names still match
+        ("sample.SNPs_Annotated.vcf", True),
+        ("sample_snp.vcf.gz", True),
+        # Checksums and metrics do not
+        ("S_1.hard-filtered.vcf.gz.md5sum", False),
+        ("S_1.gvcf_metrics.csv", False),
+    ],
+)
+def test_filter_by_file_endings_vcf_endings(file_name, expected):
+    """Test filtering with VCF_ENDINGS, including generic .vcf.gz files."""
+    endings = VCF_ENDINGS + VCF_INDEX_ENDINGS
+    uri = f"s3://bucket/dragen/{file_name}"
+    assert filter_by_file_endings(uri, endings) is expected

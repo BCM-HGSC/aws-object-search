@@ -54,6 +54,7 @@ CRAM_ENDINGS = [
 ]
 
 VCF_ENDINGS = [
+    "vcf.gz",  # also matches .gvcf.gz, mirroring VCF_INDEX_ENDINGS
     ".SNPs_Annotated.vcf",
     "_snp.vcf.gz",
     ".INDELs_Annotated.vcf",
