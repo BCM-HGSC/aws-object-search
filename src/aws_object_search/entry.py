@@ -13,6 +13,10 @@ from .tantivy_wrapper import index_catalog, run_query
 
 logger = getLogger(__name__)
 
+DOCS_URL = (
+    "https://github.com/BCM-HGSC/aws-object-search/blob/main/docs/aws-object-search.md"
+)
+
 # Default directory for catalog and index files
 DEFAULT_OUTPUT_ROOT = Path(prefix).resolve().parent / "s3_objects"
 
@@ -127,7 +131,9 @@ def parse_scan_args() -> argparse.Namespace:
     "Parse command line arguments."
     parser = argparse.ArgumentParser(
         description="Scan AWS S3 buckets, list their key in TSV files, "
-        "and index the results."
+        "and index the results.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=f"Documentation: {DOCS_URL}",
     )
     parser.add_argument(
         "-V",
@@ -229,7 +235,9 @@ Output format:
     s3://bucket-name/path/to/file
 
   Matching files are printed to standard output.
-""",
+
+Documentation: """
+        + DOCS_URL,
     )
     parser.add_argument(
         "-V",
@@ -414,7 +422,9 @@ Output format:
     s3://bucket-name/path/to/file
 
   Note: FILE is the path of input file as provided by the user.
-""",
+
+Documentation: """
+        + DOCS_URL,
     )
     parser.add_argument(
         "-V",
