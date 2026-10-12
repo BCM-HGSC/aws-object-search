@@ -73,6 +73,7 @@ search.py sample_list.txt
 ```
 
 This creates several output files:
+
 - `sample_list.txt.out.tsv`: All matching files (tab-separated format with metadata)
 - `sample_list.txt.out.info`: Summary showing match counts
 - `sample_list.txt.not_found.txt`: Detailed information about terms with no matches
