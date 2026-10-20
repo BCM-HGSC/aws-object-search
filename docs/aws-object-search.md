@@ -1,6 +1,6 @@
 # AWS Object Search
 
-This documentation describes how to search for files in AWS S3 buckets using the AWS Object Search tool.
+This documentation describes how to search for files in AWS S3 buckets using the AWS Object Search tool. To list, restore, or copy the objects you find, see [Amazon S3 and Glacier](s3.md).
 
 ## Prerequisites
 

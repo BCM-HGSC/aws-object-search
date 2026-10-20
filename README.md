@@ -3,6 +3,13 @@
 This repo is a collection of tools to facilitate searching the contents of a
 collection of S3 buckets.
 
+## User Documentation
+
+- [AWS Object Search](docs/aws-object-search.md): using `search-aws` and
+  `search.py`
+- [Amazon S3 and Glacier](docs/s3.md): listing, restoring, and copying S3
+  objects
+
 ## Development Setup
 
 ### Prerequisites
