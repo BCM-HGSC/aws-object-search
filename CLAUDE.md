@@ -91,6 +91,15 @@ Production uses versioned deployments via the `deploy` script:
 - Creates `s3_objects/` output directory
 - In production: symlinked as `current` for stable path reference
 
+## User Documentation
+
+`docs/` holds user guides, linked from `README.md`:
+
+- `docs/aws-object-search.md`: using the search tools
+- `docs/s3.md`: a basic introduction to S3 and Glacier for users who have never used S3
+
+`docs/s3.md` is deliberately basic, not a complete reference. Keep it to the common path; when reviewing it, do not flag uncommon corner cases or ask for exhaustive coverage of AWS behavior. Notes that suppress specific false-positive review findings are in `.claude/CLAUDE.md`.
+
 ## Code Quality and Validation
 
 - Always run ruff to validate new code.
