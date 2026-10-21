@@ -1,6 +1,6 @@
 # AWS Object Search
 
-This documentation describes how to search for files in AWS S3 buckets using the AWS Object Search tool.
+This documentation describes how to search for files in AWS S3 buckets using the AWS Object Search tool. To list, restore, or copy the objects you find, see [Amazon S3 and Glacier](s3.md).
 
 ## Prerequisites
 
@@ -9,11 +9,11 @@ You must have:
 - Terminal access
 - The `search-aws` and `search.py` aliases available in your shell (these should not be suppressed)
 - Understanding of the following terms:
-  - basic & intermediate:
-    - [S3 bucket](https://en.wikipedia.org/wiki/Amazon_S3): Cloud storage container in AWS
-  - advanced:
-    - [TSV file](https://en.wikipedia.org/wiki/Tab-separated_values): Text file with data separated by tabs
-    - [Compressed file](https://en.wikipedia.org/wiki/Data_compression): File that has been reduced in size using compression algorithms (e.g., `.gz`, `.bz2`)
+    - basic & intermediate:
+        - [S3 bucket](https://en.wikipedia.org/wiki/Amazon_S3): Cloud storage container in AWS
+    - advanced:
+        - [TSV file](https://en.wikipedia.org/wiki/Tab-separated_values): Text file with data separated by tabs
+        - [Compressed file](https://en.wikipedia.org/wiki/Data_compression): File that has been reduced in size using compression algorithms (e.g., `.gz`, `.bz2`)
 
 ## Search Commands Overview
 
@@ -73,6 +73,7 @@ search.py sample_list.txt
 ```
 
 This creates several output files:
+
 - `sample_list.txt.out.tsv`: All matching files (tab-separated format with metadata)
 - `sample_list.txt.out.info`: Summary showing match counts
 - `sample_list.txt.not_found.txt`: Detailed information about terms with no matches
