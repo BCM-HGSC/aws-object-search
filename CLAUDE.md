@@ -100,6 +100,8 @@ Production uses versioned deployments via the `deploy` script:
 
 `docs/s3.md` is deliberately basic, not a complete reference. Keep it to the common path; when reviewing it, do not flag uncommon corner cases or ask for exhaustive coverage of AWS behavior. Notes that suppress specific false-positive review findings are in `.claude/CLAUDE.md`.
 
+`docs/s3-history-compressor.md` holds design notes for a planned tool that diffs periodic bucket listings into a replayable event stream. It is linked from `README.md` under "Design Notes", not with the user guides.
+
 ## Code Quality and Validation
 
 - Always run ruff to validate new code.

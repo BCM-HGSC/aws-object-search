@@ -10,6 +10,11 @@ collection of S3 buckets.
 - [Amazon S3 and Glacier](docs/s3.md): listing, restoring, and copying S3
   objects
 
+## Design Notes
+
+- [S3 Bucket History Compressor](docs/s3-history-compressor.md): diffing
+  periodic bucket listings into a replayable event stream
+
 ## Development Setup
 
 ### Prerequisites
