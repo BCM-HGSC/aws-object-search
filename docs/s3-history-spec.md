@@ -570,7 +570,10 @@ because once a month is sealed, a snapshot from that month is rejected.
 2. Re-read the segment and check that it holds exactly the period's
    events: per-snapshot counts must match the `snapshot` records.
 3. Verify the replay (below) at the period's last snapshot against its
-   `state_sha256`.
+   `state_sha256`, reading the new segment in place of the period's
+   staging files, as if the seal were already recorded. Otherwise the
+   replay would read only the staging files, and the segment that is
+   about to replace them would go unchecked.
 4. Append the `seal` record, then delete the period's staging files.
 
 If the process dies between steps, rerunning writes the segment again,
