@@ -597,9 +597,15 @@ because once a month is sealed, a snapshot from that month is rejected.
 1. K-way merge the period's staging files into one segment, ordered by
    key then `snapshot_at`.
 2. Re-read the segment and check that it holds exactly the period's
-   events: per-snapshot counts must match the `snapshot` records.
+   events: for each snapshot, the segment's rows with that
+   `snapshot_at`, in order, must equal its staging file row for row.
+   Counts alone would miss an event moved between snapshots, and step 3
+   checks only the last snapshot.
 3. Verify the replay (below) at the period's last snapshot against its
-   `state_sha256`.
+   `state_sha256`, reading the new segment in place of the period's
+   staging files, as if the seal were already recorded. Otherwise the
+   replay would read only the staging files, and the segment that is
+   about to replace them would go unchecked.
 4. Append the `seal` record, then delete the period's staging files.
 
 If step 2 or 3 fails, the seal stops and reports as ingestion steps 3
