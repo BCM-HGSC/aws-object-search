@@ -12,8 +12,9 @@ collection of S3 buckets.
 
 ## Design Notes
 
-- [S3 Bucket History Compressor](docs/s3-history-compressor.md): diffing
-  periodic bucket listings into a replayable event stream
+- [S3 Bucket History Specification](docs/s3-history-spec.md) (draft):
+  diffing periodic bucket listings into a replayable history of events,
+  with its storage format, ingestion, and queries
 
 ## Development Setup
 
