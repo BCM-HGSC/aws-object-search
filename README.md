@@ -10,6 +10,12 @@ collection of S3 buckets.
 - [Amazon S3 and Glacier](docs/s3.md): listing, restoring, and copying S3
   objects
 
+## Design Notes
+
+- [S3 Bucket History Specification](docs/s3-history-spec.md) (draft):
+  diffing periodic bucket listings into a replayable history of events,
+  with its storage format, ingestion, and queries
+
 ## Development Setup
 
 ### Prerequisites
