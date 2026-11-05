@@ -529,6 +529,9 @@ For each candidate:
    catalogs, so the held snapshot is not diffed again each night, and a
    later change to the thresholds cannot accept it without the operator.
    Each run reports the blocked bucket. Other buckets are unaffected.
+   A hold is not an error: it does not end the run early or make
+   `aos-scan` exit non-zero, since a large drop may be a deliberate
+   cleanup.
    `--accept` runs steps 1–8 on the held catalog, skipping only step 4,
    so the diff is redone and the step check still guards the record.
    `--reject` appends a `rejected` record. Either leaves the bucket's
@@ -883,3 +886,6 @@ Recorded 2026-11-05:
   loses no raw data, at the cost of keeping up to about one month of
   catalogs. (Replaces the earlier rule that a catalog could be pruned
   once its `snapshot` record existed; `keep_days` is now a floor.)
+- A hold is not an error and does not change `aos-scan`'s exit status.
+  A large drop may be an operator's deliberate cleanup, which is
+  resolved with `--accept`, not treated as a failure.

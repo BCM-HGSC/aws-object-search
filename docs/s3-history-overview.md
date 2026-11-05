@@ -405,7 +405,8 @@ command line, but changing them never releases an existing hold.
 A stopped or held bucket affects only itself: other buckets are
 ingested, and indexing and pruning still run. A stopped bucket makes
 `aos-scan` exit non-zero so cron reports it; a held bucket is reported
-in each run's output.
+in each run's output but is not an error, since a large drop may be a
+deliberate cleanup.
 
 ## Sealing a month
 
