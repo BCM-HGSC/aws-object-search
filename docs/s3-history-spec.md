@@ -423,7 +423,7 @@ history_only = [
 exclude = []
 
 [history]
-keep_days = 14            # --keep-days
+keep_days = 14            # --keep-days; minimum age before pruning
 max_drop_fraction = 0.10  # --max-drop-fraction
 max_drop_rows = 1000      # --max-drop-rows
 ```
@@ -676,21 +676,40 @@ when:
 - the catalog has a sidecar. A catalog without one belongs to the
   backfilled archive, which only `aos-history prune --backfilled` deletes,
   after `verify` passes for its bucket (see "Backfill"),
-- the ledger has a `base` or `snapshot` record for that catalog, which
-  ingestion appends only after the step check (or, for a base, the
-  re-read check) has passed, and
-- that record's data file, if any, still matches its `file_sha256`; for
-  a `snapshot` in a sealed month, the segment must match the checksum in
-  its `seal` record instead.
+- the ledger has a `base` record for that catalog, or a `snapshot`
+  record for it whose month (UTC) has a `seal` record. Ingestion appends
+  a `base` only after its re-read check, and sealing appends a `seal`
+  only after its count and replay checks (see "Sealing a month"), and
+- that record's data file still matches its checksum: the base file
+  against the `base` record's `file_sha256`, or the segment against its
+  `seal` record's `file_sha256` (nothing to check if that `file` is
+  empty). A catalog with both records, such as the first of a year, needs
+  only the `base`.
+
+The seal condition keeps every catalog of a month that has no `base`
+record until the month's segment has passed the seal checks, so a seal
+that fails loses no raw data: the bucket stops, as described in "Sealing
+a month", and those catalogs stay until an operator resolves it.
+`keep_days` is a floor, not the retention period. A catalog is kept at
+least `keep_days`, and, unless it has a `base` record, until its month
+is sealed, normally on the 1st of
+the next month. With the default, catalogs from early in a month are
+kept about a month and those from late in a month 14 days, so the
+archive peaks at about one month of catalogs (about 130 GiB at the
+growth rate in "Motivation"). A month with only `base` records is never
+sealed, which is why a `base` record suffices on its own. The last month
+of an ended series is sealed only by `aos-history seal BUCKET`, so its
+catalogs stay until an operator runs it.
 
 Pruning holds each bucket's lock while it deletes that bucket's
 catalogs, taking it without waiting and skipping a locked bucket, so it
 never deletes a catalog that ingestion or backfill is about to read.
 
-A full-replay check, the one `verify` also runs, is part of each
-monthly seal. It is not a precondition for each daily prune, because a
-full replay of `logs-bucket` reads its 3.3 GB base every time; the step checks already chain each
-snapshot to its base.
+Pruning does not run a full replay itself, because a full replay of
+`logs-bucket` reads its 3.3 GB base every time. The seal condition means
+every pruned `snapshot` catalog's events were compared row for row with
+the segment that replaced its staging file, and the month's seal replay
+and the step checks chain each snapshot to its base.
 
 Rejected catalogs are never pruned automatically. Archiving moves them
 to `archive/rejected/` for review, from the top level or from
@@ -747,8 +766,9 @@ catalogs it recorded, since they have no sidecars. Once backfill has
 finished, `aos-history prune --backfilled` takes each bucket's
 exclusive lock, runs `verify` on it under that lock, and, in each bucket
 that passes, prunes the archived catalogs without sidecars that meet the
-other two conditions in "Pruning raw snapshots": a `base` or `snapshot`
-record whose data file still matches its checksum. It never deletes a
+other two conditions in "Pruning raw snapshots": a `base` record, or a
+`snapshot` record in a sealed month, whose data file still matches its
+checksum. It never deletes a
 held, rejected, or unrecorded catalog, and it refuses a blocked series.
 No separate copy of the 1.7 TB archive is kept.
 
@@ -858,3 +878,8 @@ Recorded 2026-11-05:
 - A bare date given to a query is read to give the most output: for
   `as-of`, the end of that day in `America/Chicago`, so the day's own
   snapshot is included.
+- A raw catalog is pruned only once its content is in a base or in a
+  sealed month, and is at least `keep_days` old. A seal that fails then
+  loses no raw data, at the cost of keeping up to about one month of
+  catalogs. (Replaces the earlier rule that a catalog could be pruned
+  once its `snapshot` record existed; `keep_days` is now a floor.)

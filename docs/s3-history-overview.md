@@ -56,7 +56,7 @@ flowchart TD
     CAT -->|index| IDX[(Search index)]
     CAT -->|"ingest: diff against<br/>previous state"| HIST["history/BUCKET/<br/>base + events + ledger"]
     HIST -->|as-of, log| Q[Answers about the past]
-    HIST -.->|"proves content<br/>is stored"| PRUNE["Prune raw catalogs<br/>older than 14 days"]
+    HIST -.->|"proves content<br/>is stored"| PRUNE["Prune raw catalogs<br/>in sealed months"]
     PRUNE -.->|deletes| CAT
 ```
 
@@ -82,8 +82,9 @@ holds a night's content, the raw catalog for that night can be deleted.
    listing rather than a mass deletion. It waits for an operator instead
    of writing thousands of false deletions.
 5. **Raw data is deleted only when provably redundant.** Pruning needs a
-   ledger record (written only after the check in 3) and an intact data
-   file.
+   base, or a snapshot in a month that has been sealed (and so checked
+   again against the segment that replaced its staging file), and an
+   intact data file.
 
 ## Vocabulary
 
@@ -368,7 +369,7 @@ its time is not after the last accepted snapshot (or falls in an
 already-sealed month).
 
 **The previous state** comes from the previous raw catalog when it is
-still on disk (normally, since raw catalogs are kept 14 days), or is
+still on disk (normally, since raw catalogs are kept at least 14 days), or is
 reconstructed from the history otherwise. Either way its digest must
 match the ledger, or the bucket stops.
 
@@ -522,7 +523,7 @@ stateDiagram-v2
     Held --> Recorded: --accept
     Held --> Rejected: --reject
     Recorded --> Archived: a newer catalog exists
-    Archived --> Pruned: older than keep_days, record exists, data file checksum OK
+    Archived --> Pruned: older than keep_days, base or sealed month, data file checksum OK
     Pruned --> [*]
     Rejected --> ArchivedRejected: a newer catalog exists
     ArchivedRejected --> [*]: never pruned automatically
@@ -532,8 +533,14 @@ stateDiagram-v2
 first run of the night archives nothing. The diagram shows the usual
 order.)
 
-Raw catalogs are kept 14 days by default (`keep_days`), so the nightly
-diff normally reads two raw files and never needs a reconstruction.
+A raw catalog is pruned only once it is at least `keep_days` old (14
+by default) and either has a `base` record or its month is sealed.
+Catalogs from early in a month are therefore kept about a month, and those from
+late in a month 14 days; at peak, about one month of catalogs is on
+disk. If a seal fails, every catalog of that month without a `base`
+record is still there. The
+nightly diff normally reads two raw files and never needs a
+reconstruction.
 → [Pruning raw snapshots](s3-history-spec.md#pruning-raw-snapshots)
 
 ## Backfill: the existing archive
