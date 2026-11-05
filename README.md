@@ -12,6 +12,9 @@ collection of S3 buckets.
 
 ## Design Notes
 
+- [S3 Bucket History Overview](docs/s3-history-overview.md): an
+  introduction to the history design, with diagrams and a worked
+  example; read it before the spec
 - [S3 Bucket History Specification](docs/s3-history-spec.md) (draft):
   diffing periodic bucket listings into a replayable history of events,
   with its storage format, ingestion, and queries

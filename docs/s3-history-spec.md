@@ -2,6 +2,10 @@
 
 Status: draft for discussion, 2026-10-23.
 
+For an introduction with diagrams and a worked example, see
+[`s3-history-overview.md`](s3-history-overview.md). This spec is
+authoritative where the two differ.
+
 This spec describes a tool that diffs periodic listings of S3 buckets
 into a history of events, from which any accepted listing can be
 reconstructed. It defines the events, storage format, ingestion process,
@@ -761,6 +765,10 @@ and rebuilt.
 - `aos-history as-of BUCKET DATE [-o FILE]`: reconstruct the state at the
   last accepted snapshot on or before DATE, in catalog format. Answers
   "what was in this bucket then?" and supports `zgrep` workflows.
+  DATE is a UTC time (`YYYY-MM-DDTHH:MM:SSZ`) or a bare date
+  (`YYYY-MM-DD`). A bare date means the end of that day in
+  `America/Chicago`, the time zone of catalog names, so it selects that
+  local day's last accepted snapshot, or the last one before it.
 - `aos-history log BUCKET [KEY_OR_PREFIX]`: print events for a key or
   prefix in time order, across bases, segments, and the staging files of
   unsealed months. Answers "when did this
@@ -844,3 +852,9 @@ Recorded 2026-10-23:
 - `--accept` and `--reject` name the bucket as well as the snapshot,
   since empty buckets list in under a second and can share a
   `snapshot_at`. They also resolve holds during backfill.
+
+Recorded 2026-11-05:
+
+- A bare date given to a query is read to give the most output: for
+  `as-of`, the end of that day in `America/Chicago`, so the day's own
+  snapshot is included.
