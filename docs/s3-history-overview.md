@@ -71,8 +71,10 @@ holds a night's content, the raw catalog for that night can be deleted.
 1. **The history is the source of truth.** Every accepted listing can be
    reconstructed exactly. Query formats (search indexes, Parquet) are
    derived from it and can be rebuilt.
-2. **Nothing is modified in place.** Files are written once, under a
-   temporary name, then renamed. The per-bucket ledger only grows.
+2. **Data files are never modified in place.** They are written once,
+   under a temporary name, then renamed. The per-bucket ledger is only
+   appended to, apart from removing a torn final line that was never
+   acknowledged.
 3. **Every step is proven before it counts.** After writing a night's
    events, the tool re-reads them from disk, applies them to the
    previous state, and checks that the result hashes to the new
@@ -464,7 +466,7 @@ with `zgrep`. → [Reconstruction](s3-history-spec.md#reconstruction)
 | Base re-read | Every base write | The base on disk hashes to the snapshot's digest |
 | Step check | Every snapshot | Previous state + stored events = this snapshot |
 | Seal replay | Every month | The new segment, and the chain from the base, reproduce the month's last snapshot |
-| `aos-history verify` | On demand; before pruning the backfilled archive | Ledger CRCs, every file checksum, segment counts, and replays at every sealed month and the latest snapshot |
+| `aos-history verify` | On demand; before pruning the backfilled archive | Ledger CRCs, every data file checksum, segment counts, and replays at every sealed month and the latest snapshot |
 
 Because every step is checked, every accepted snapshot is reproducible
 by induction from its base.

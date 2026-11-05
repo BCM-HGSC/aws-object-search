@@ -30,8 +30,11 @@ A base snapshot plus events is therefore a few GiB instead of terabytes.
 
 1. The history is the **source of truth** for the past contents of every
    scanned bucket. Any accepted snapshot can be reconstructed exactly.
-2. **Durability first**: no file in the history is ever modified in place;
-   every file is checksummed; every reconstruction can be verified.
+2. **Durability first**: data files are written once and never modified;
+   the ledger is only appended to, apart from removing a torn final line
+   that was never acknowledged, and each of its lines carries a CRC.
+   Every data file is checksummed, and every reconstruction can be
+   verified.
 3. Raw snapshots can be deleted once their content is provably in the
    history.
 4. Query formats are derived from the history and can be rebuilt from it
